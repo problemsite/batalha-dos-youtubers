@@ -94,7 +94,7 @@
   <h1>BATALHA DOS YOUTUBERS</h1>
   <div id="slots"></div>
   <div id="msgLobby"></div>
-  <div style="position:absolute;bottom:8px;right:12px;font-size:12px;opacity:.7;text-shadow:2px 2px 0 #0d2b0f">v16</div>
+  <div style="position:absolute;bottom:8px;right:12px;font-size:12px;opacity:.7;text-shadow:2px 2px 0 #0d2b0f">v17</div>
   <!-- compatibilidade com o código antigo -->
   <div id="form" style="display:none"></div><div id="espera" style="display:none"></div><button id="btnPronto" style="display:none"></button>
   <div id="modal"><div class="card px">
@@ -146,7 +146,7 @@ window.dispatchEvent(new Event("nx-pronto"));
    CONFIGURAÇÃO — personagens (placeholders) e ROTEIRO
    ===================================================================== */
 const CONFIG = {
-  versao: 16,               // muda quando o padrão muda: config velha salva no ADM é ignorada
+  versao: 17,               // muda quando o padrão muda: config velha salva no ADM é ignorada
   nexusVida: 5000,
   cooldown: 5,             // segundos entre compras (só visual, o roteiro manda)
   cooldownMorte: 10,       // quando um personagem morre, fica esse tempo sem poder ser colocado de novo
@@ -518,7 +518,7 @@ function passo(){
       const fora = u.j === 1 ? u.x - (fx + folga) : (fx - folga) - u.x;
       if (fora > 0) {   // a frente inimiga passou por cima: recua apanhando
         u.x += (u.j === 1 ? -1 : 1) * Math.min(fora, P.vel*BT*1.2);
-        u.vida -= u.max * 0.12 * BT; u.hit = simT;
+        u.vida -= u.max * 0.12 * BT;          // perde vida recuando (sem piscar branco o tempo todo)
       }
     }
     u.x = Math.max(1, Math.min(PISTA-1, u.x));
@@ -582,7 +582,8 @@ function dano(alvo, v, ladoNexus, atk){
   if (alvo !== "nexus" && atk) { const m = mult(atk, alvo); v *= m; if (m > 1 && alvo.vida > 0) FX.critico(alvo); }
   if (alvo !== "nexus" && classeDe(alvo) === "tanque") v *= 0.75;      // escudo do tanque
   if (alvo === "nexus") { nx[ladoNexus].vida = Math.max(0, nx[ladoNexus].vida - v); nx[ladoNexus].hit = simT; FX.hit({ x:NEXUS[ladoNexus].x, y:0, z:1.6 }, v, true, ladoNexus); }
-  else if (alvo.vida > 0) { alvo.vida -= v; alvo.hit = simT; FX.hit(alvo, v, false, alvo.j); }
+  else if (alvo.vida > 0) { alvo.vida -= v; if (simT - (alvo.hit || -9) > 0.4) alvo.hit = simT;   // pisca no máximo a cada 0.4s
+    FX.hit(alvo, v, false, alvo.j); }
 }
 
 /* ===== EFEITOS (juice) — só visual ===== */
@@ -841,7 +842,7 @@ function desenharUnidade(u, t){
   const da = simT - (u.atk||-9), lunge = da < 0.18 ? snap(Math.sin(da/0.18*Math.PI)*16*SC*(EU===2?-1:1)*(u.ax||0)) : 0;
   const ds = u.salto ? simT - u.salto.t : 9, pulo = 0;
   if (ds < 0.15) return;                       // ainda viajando dentro da fumaça
-  const tam = Math.round(100*SC), hit = simT - (u.hit||-9) < 0.1;
+  const tam = Math.round(100*SC), hit = simT - (u.hit||-9) < 0.07;
   ctx.globalAlpha = fade;
   const sw = snap(tam*0.42*(1 - queda/400)); ctx.fillStyle = "rgba(0,0,0,.35)";
   ctx.fillRect(snap(p.x - sw/2), snap(p.y - PX), sw, PX*2); ctx.fillRect(snap(p.x - sw/2 + PX*2), snap(p.y - PX*2), sw - PX*4, PX*4);
