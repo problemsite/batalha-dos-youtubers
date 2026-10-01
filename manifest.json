@@ -1,0 +1,10 @@
+{
+  "name": "Batalha dos YOUTUBERS",
+  "short_name": "Batalha",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0b1022",
+  "theme_color": "#0b1022",
+  "icons": [{ "src": "img/escudo.png", "sizes": "64x64", "type": "image/png" }]
+}

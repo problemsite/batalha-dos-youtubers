@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="../favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADM · Batalha dos YOUTUBERS</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b1022;--pn:#161e3a;--pn2:#1d2850;--ln:#2b3a6b;--tx:#e8f1ff;--mu:#8fa6d0;--azul:#2fa8ff;--verm:#ff4f6d;--ama:#ffc83d;--verde:#3fd47a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:"Fredoka","Segoe UI",Arial,sans-serif;font-size:14px;background:radial-gradient(circle at 20% 0%,#1d2b5a,#0b1022 60%) fixed}
+  header{position:sticky;top:0;z-index:10;background:var(--pn);border-bottom:1px solid var(--ln);padding:10px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0}
+  .relogio{font:700 28px/1 "Fredoka",sans-serif;color:#fff;background:linear-gradient(#5cc0ff,#2a8fe0)!important;min-width:92px;text-align:center;background:var(--bg);padding:6px 10px;border-radius:10px}
+  .estado{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--pn2);color:var(--mu)}
+  .estado.on{background:#143d2a;color:#7ff0a4}
+  #salvo{margin-left:auto;font-size:12px;color:var(--mu)}
+  nav{display:flex;gap:4px;padding:0 18px;background:var(--pn);border-bottom:1px solid var(--ln);position:sticky;top:58px;z-index:9}
+  nav button{background:none;border:none;color:var(--mu);padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent}
+  nav button.ativo{color:var(--tx);border-color:var(--azul)}
+  main{padding:18px;max-width:1300px;margin:auto}
+  .aba{display:none;flex-direction:column;gap:16px} .aba.ativo{display:flex}
+  section{background:var(--pn);border-radius:22px;padding:18px;border:none;box-shadow:0 10px 30px rgba(0,0,0,.35);border:1px solid rgba(120,170,255,.12)}
+  h2{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .ajuda{font-size:12px;color:var(--mu);margin:-6px 0 12px}
+  button.b,a.b{background:linear-gradient(#5cc0ff,#2a8fe0);color:#fff;border:none;border-radius:999px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+  button.b:hover{filter:brightness(1.15)}
+  .sec{background:linear-gradient(#3d4f80,#2b3a63)!important} .perigo{background:linear-gradient(#ff7a8f,#e2405c)!important} .ok{background:linear-gradient(#6fe08c,#33b25a)!important} .ama{background:linear-gradient(#ffd84a,#f2b705)!important;color:#5a4300!important}
+  .mini{padding:5px 9px!important;font-size:12px!important}
+  input,select{background:var(--pn2);color:var(--tx);font-family:inherit;border:1px solid var(--ln);border-radius:8px;padding:7px;font-size:13px}
+  input:focus,select:focus{outline:2px solid var(--azul);border-color:transparent}
+  .linha{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .campo{background:var(--pn2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+  .campo b{font-size:13px} .campo small{color:var(--mu);font-size:11px}
+  .campo input[type=number]{width:100%}
+  .toggle{flex-direction:row;align-items:center;gap:10px;cursor:pointer}
+  .toggle input{width:18px;height:18px}
+  /* ao vivo */
+  .jogs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .jog{display:flex;align-items:center;gap:12px;background:var(--pn2);border-radius:12px;padding:12px;border-left:5px solid}
+  .jog img,.jog .sem{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#2b3a6b}
+  .jog .nm{font-weight:800;font-size:16px} .jog .st{font-size:12px;color:var(--mu)}
+  .prox{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .prox ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .prox li{background:var(--pn2);border-radius:8px;padding:8px 10px;display:flex;gap:10px;align-items:center;font-size:13px}
+  .prox li .t{font-weight:900;min-width:52px;color:var(--ama)}
+  .prox li.agora{outline:2px solid var(--ama)}
+  /* linha do tempo */
+  #tl{position:relative;height:96px;background:var(--bg);border-radius:10px;cursor:pointer;overflow:hidden;user-select:none}
+  #tl .fx{position:absolute;left:0;right:0;height:1px;background:var(--ln)}
+  #tl .ev{position:absolute;width:16px;height:16px;color:#fff!important;border-radius:50%;transform:translate(-7px,-7px);border:2px solid #fff;box-shadow:0 1px 3px #0003;font-size:9px;font-weight:900;color:#000;display:flex;align-items:center;justify-content:center}
+  #tl .play{position:absolute;top:0;bottom:0;width:3px;background:var(--ama);box-shadow:0 0 8px var(--ama)}
+  #tl .lbl{position:absolute;font-size:10px;color:var(--mu);left:6px}
+  #tl .seg{position:absolute;bottom:2px;font-size:10px;color:var(--mu);transform:translateX(-50%)}
+  /* personagens */
+  .classes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .cls{background:var(--pn2);border-radius:12px;padding:12px;border-left:6px solid}
+  .cls b{font-size:15px} .cls p{margin:6px 0 0;font-size:12px;color:var(--mu)} .cls .f{color:var(--verde);font-size:12px;margin-top:6px} .cls .w{color:var(--verm);font-size:12px}
+  .tagc{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;color:#0b1022}
+  .persGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+  .pc{background:var(--pn2);border-radius:12px;padding:10px;display:grid;grid-template-columns:64px 1fr;gap:10px;border-top:4px solid}
+  .pc .foto{background-size:contain!important;background-repeat:no-repeat!important;background-position:center bottom!important}
+  .pc .foto{width:64px;height:64px;border-radius:50%;background:#2b3a6b center/cover;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;position:relative}
+  .pc .foto:hover::after{content:"📷";position:absolute;inset:0;background:#0008;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .pc .nome{width:100%;font-weight:700}
+  .stats{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .stats label{font-size:10px;color:var(--mu);display:flex;flex-direction:column;gap:2px}
+  .stats input{width:100%;padding:5px}
+  /* roteiro */
+  .rot{display:flex;flex-direction:column;gap:6px}
+  .ev-row{display:grid;grid-template-columns:100px 120px 1fr 190px auto;gap:10px;align-items:center;background:var(--pn2);border-radius:10px;padding:8px 10px;border-left:5px solid}
+  .ev-row.msg{border-left-color:var(--ama)!important}
+  .ev-row .alerta{color:var(--ama);font-size:11px}
+  .hexpick{display:grid;grid-template-columns:repeat(7,18px);gap:2px}
+  .hexpick span{width:18px;height:14px;background:#2b3a6b;border-radius:3px;cursor:pointer}
+  .hexpick span:nth-child(14n+8),.hexpick span:nth-child(14n+9),.hexpick span:nth-child(14n+10),.hexpick span:nth-child(14n+11),.hexpick span:nth-child(14n+12),.hexpick span:nth-child(14n+13),.hexpick span:nth-child(14n+14){transform:translateX(9px)}
+  .hexpick span.sel{background:var(--ama)}
+  .hexpick span:hover{background:#4a6aa8}
+  .pickwrap{display:flex;flex-direction:column;gap:2px;font-size:9px;color:var(--mu)}
+  .seg1{display:flex;border-radius:8px;overflow:hidden;border:1px solid var(--ln)}
+  .seg1 button{flex:1;border:none;background:var(--bg);color:var(--mu);padding:6px;font-weight:800;cursor:pointer}
+  .seg1 button.on1{background:var(--azul);color:#fff} .seg1 button.on2{background:var(--verm);color:#fff}
+  @media(max-width:900px){.jogs,.prox{grid-template-columns:1fr}.ev-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚙️ ADM · Batalha dos YOUTUBERS <small style="font-size:11px;opacity:.6">v16</small></h1>
+  <div class="relogio" id="relogio">--</div>
+  <span class="estado" id="estado">carregando…</span>
+  <label class="linha" style="gap:6px;font-size:12px;color:var(--mu)">Sala <input id="sala" style="width:110px"></label>
+  <span id="salvo"></span>
+</header>
+<nav>
+  <button data-aba="vivo" class="ativo">🎬 Ao vivo</button>
+  <button data-aba="roteiro">📜 Roteiro</button>
+  <button data-aba="pers">🧑 Personagens</button>
+  <button data-aba="regras">⚙️ Regras</button>
+</nav>
+
+<main>
+  <!-- ================= AO VIVO ================= -->
+  <div class="aba ativo" id="aba-vivo">
+    <section>
+      <h2>👥 Jogadores</h2>
+      <div class="jogs" id="jogs"></div>
+    </section>
+
+    <section>
+      <h2>🎮 Controles</h2>
+      <div class="linha">
+        <button class="b ok" onclick="reiniciar()">▶ Iniciar / Reiniciar do 0s</button>
+        <button class="b sec" onclick="pararPartida()">⏹ Parar (volta pro lobby)</button>
+        <span style="width:1px;height:28px;background:var(--ln)"></span>
+        <button class="b sec mini" onclick="pularRel(-10)">⏪ -10s</button>
+        <button class="b sec mini" onclick="pularRel(10)">+10s ⏩</button>
+        <label class="linha" style="gap:6px">Ir para <input id="pularS" value="0:20" style="width:70px" title="minutos:segundos"> <button class="b mini" onclick="pular(lerTempo($('pularS').value))">Ir</button></label>
+      </div>
+      <div class="linha" style="margin-top:12px">
+        <span class="linha" style="gap:6px;font-size:13px">🖼️ Fundo da loja:
+          <button class="b mini sec" onclick="trocaLoja('madeira')">Marrom</button><button class="b mini sec" onclick="trocaLoja('penhasco')">Penhasco</button></span>
+        <button class="b" style="background:linear-gradient(#c77dff,#8b3fd9)" onclick="modoRapido()">⚡ Modo 1 minuto</button>
+        <button class="b sec mini" onclick="modoNormal()">Velocidade normal</button>
+        <button class="b ama" onclick="testeSozinho()">🤖 Testar sozinho (abre as 2 visões)</button>
+        <a href="../?ver=1" target="_blank" class="b mini" style="text-decoration:none;color:#fff;background:var(--azul)">👁 Visão J1</a>
+        <a href="../?ver=2" target="_blank" class="b mini" style="text-decoration:none;color:#fff;background:var(--verm)">👁 Visão J2</a>
+        <button class="b sec" onclick="voltarLobby()">🚪 Tirar jogadores</button>
+        <button class="b perigo" onclick="resetarTudo()">🧨 Resetar TUDO</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>⏱ Linha do tempo <span class="ajuda" style="margin:0">— clique em qualquer ponto para pular para aquele segundo</span></h2>
+      <div id="tl"></div>
+    </section>
+
+    <section>
+      <h2>🔜 Próximas ações</h2>
+      <div class="prox">
+        <div><div style="color:var(--azul);font-weight:800;margin-bottom:6px">Jogador 1</div><ul id="prox1"></ul></div>
+        <div><div style="color:var(--verm);font-weight:800;margin-bottom:6px">Jogador 2</div><ul id="prox2"></ul></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= ROTEIRO ================= -->
+  <div class="aba" id="aba-roteiro">
+    <section>
+      <h2>📜 Roteiro</h2>
+      <p class="ajuda">Cada linha é uma compra (ou um aviso). Tempo em <b>minutos:segundos</b> (ex: 1:30). Se o jogador ainda não tiver o dinheiro, o jogo espera juntar e compra sozinho — a previsão aparece em cada linha. <b>▶</b> pula a partida para 3s antes. Salva sozinho.</p>
+      <div class="linha" style="margin-bottom:12px">
+        <button class="b" onclick="addLinha('add',1)">+ Compra J1</button>
+        <button class="b" style="background:var(--verm)" onclick="addLinha('add',2)">+ Compra J2</button>
+        <button class="b ama" onclick="addLinha('msg',1)">+ Aviso</button>
+      </div>
+      <div class="rot" id="rot"></div>
+    </section>
+  </div>
+
+  <!-- ================= PERSONAGENS ================= -->
+  <div class="aba" id="aba-pers">
+    <section>
+      <h2>⚔️ Classes — quem ganha de quem</h2>
+      <p class="ajuda">Dano contra quem você é <b style="color:var(--verde)">forte</b> é multiplicado (padrão 1.6x); contra quem você é <b style="color:var(--verm)">fraco</b> diminui (0.6x). Ajuste os multiplicadores em ⚙️ Regras.</p>
+      <div class="classes" id="tabClasses"></div>
+    </section>
+    <section><h2 style="color:var(--azul)">🔵 Personagens do Jogador 1</h2><p class="ajuda">Clique na bolinha para escolher a foto do PC.</p><div class="persGrid" id="p1"></div></section>
+    <section><h2 style="color:var(--verm)">🔴 Personagens do Jogador 2</h2><div class="persGrid" id="p2"></div></section>
+  </div>
+
+  <!-- ================= REGRAS ================= -->
+  <div class="aba" id="aba-regras">
+    <section>
+      <h2>⚙️ Regras da partida</h2>
+      <div class="grid">
+        <label class="campo"><b>Vida do nexus</b><input type="number" id="nexusVida"></label>
+        <label class="campo"><b>⚔️ Dano quando é forte (x)</b><input type="number" id="forte" step="0.1"></label>
+        <label class="campo"><b>⚔️ Dano quando é fraco (x)</b><input type="number" id="fraco" step="0.1"></label>
+        <label class="campo"><b>👥 Máx. em campo por lado</b><input type="number" id="maxEmCampo" min="1"><small>quantos personagens cada time pode ter ao mesmo tempo</small></label>
+        <label class="campo"><b>👥 Máx. em campo no final</b><input type="number" id="maxFinal" min="1"><small>vale no último 1:30 da partida</small></label>
+        <label class="campo"><b>⚡ Acelerar (debug)</b><input type="number" id="acelerar" step="1" min="1"><small>1 = normal · 8 = partida de 8 min em 1 min</small></label>
+        <label class="campo"><b>🏆 Quem ganha</b><select id="vencedor"><option value="1">Jogador 1</option><option value="2">Jogador 2</option><option value="0">Ninguém (batalha decide)</option></select><small>o nexus do perdedor vai caindo aos poucos até o fim</small></label>
+        <label class="campo"><b>⏱ Duração até o nexus cair (s)</b><input type="number" id="duracao"><small>480 = 8:00</small></label>
+        <label class="campo"><b>🖼️ Fundo da loja</b><select id="lojaFundo"><option value="madeira">Painel marrom (madeira)</option><option value="penhasco">Penhasco da imagem</option></select><small>muda na hora, dá pra comparar com a partida rolando</small></label>
+        <label class="campo"><b>💰 Dinheiro inicial</b><input type="number" id="dinheiroInicial"></label>
+        <label class="campo"><b>💰 Renda por segundo</b><input type="number" id="renda" step="0.5"><small>quanto ganha por segundo no começo</small></label>
+        <label class="campo"><b>📈 Renda cresce a cada (s)</b><input type="number" id="rendaCresce"><small>a cada X segundos a renda soma +1x a inicial</small></label>
+        <label class="campo"><b>Ritmo da batalha</b><input type="number" id="ritmo" step="0.05" min="0.1"><small>1 = normal · 0.5 = metade · 0.3 = bem lento</small></label>
+        <label class="campo"><b>Cooldown entre compras (s)</b><input type="number" id="cooldown" step="0.5"></label>
+        <label class="campo"><b>Cooldown depois de morrer (s)</b><input type="number" id="cooldownMorte" step="0.5"></label>
+        <label class="campo"><b>Aviso antes de recolocar (s)</b><input type="number" id="avisoRecolocar" step="0.5"></label>
+        <label class="campo toggle"><input type="checkbox" id="autoRecolocar"><span><b>Recolocar sozinho</b><br><small>quando acaba o cooldown de morte</small></span></label>
+        <label class="campo toggle"><input type="checkbox" id="nexusAtira"><span><b>Nexus atira</b><br><small>em quem ataca ele</small></span></label>
+        <label class="campo toggle"><input type="checkbox" id="focarNovo"><span><b>Focar no novo</b><br><small>quem bate no nexus troca pro recém-colocado</small></span></label>
+      </div>
+      <div class="linha" style="margin-top:14px"><button class="b perigo" onclick="restaurarPadrao()">↩ Voltar regras, personagens e roteiro pro padrão do código</button></div>
+    </section>
+  </div>
+</main>
+<input type="file" id="fileFoto" accept="image/*" hidden>
+
+<script type="module">
+let firebaseConfig = null;
+try { ({ firebaseConfig } = await import("../firebase-config.js")); } catch (e) {}
+
+const $ = id => document.getElementById(id);
+const urlFoto = f => /^(data:|https?:)/.test(f) ? f : "../" + f;
+const mmss = v => { const neg = v < 0; v = Math.abs(v); const m = Math.floor(v/60), s = Math.floor(v%60); return (neg?"-":"") + m + ":" + String(s).padStart(2,"0"); };
+const lerTempo = txt => { txt = String(txt).trim(); if (txt.includes(":")) { const [m,s] = txt.split(":"); return (+m||0)*60 + (+s||0); } return +txt || 0; };
+const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+const salaEl = $("sala");
+salaEl.value = new URLSearchParams(location.search).get("sala") || "principal";
+const sala = () => salaEl.value.trim() || "principal";
+
+/* ===== abas ===== */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("ativo", x === b));
+  document.querySelectorAll(".aba").forEach(a => a.classList.toggle("ativo", a.id === "aba-" + b.dataset.aba));
+  try { localStorage.setItem("nexus_adm_aba", b.dataset.aba); } catch(e){}
+});
+try { const a = localStorage.getItem("nexus_adm_aba"); if (a) document.querySelector(`nav button[data-aba="${a}"]`)?.click(); } catch(e){}
+
+/* ===== conexão ===== */
+let api, desligar = () => {}, ULT = {};
+async function conectar(){
+  desligar();
+  const S = sala();
+  if (firebaseConfig) {
+    const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    const { getDatabase, ref, set, onValue } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+    const db = getDatabase(getApps()[0] || initializeApp(firebaseConfig));
+    const r = p => ref(db, "nexus/" + S + (p ? "/" + p : ""));
+    api = { ouvir: cb => { desligar = onValue(r(), s => cb(s.val() || {})); }, set: (p, v) => set(r(p), v) };
+  } else {
+    const K = "nexus_" + S, bc = new BroadcastChannel(K), ler = () => JSON.parse(localStorage.getItem(K) || "{}");
+    let cb0 = null; bc.onmessage = () => cb0 && cb0(ler());
+    addEventListener("storage", e => { if (e.key === K && cb0) cb0(ler()); });
+    desligar = () => bc.close();
+    api = { ouvir: cb => { cb0 = cb; cb(ler()); },
+      set: (p, v) => { const d = ler(); if (v === null) delete d[p]; else d[p] = v; localStorage.setItem(K, JSON.stringify(d)); bc.postMessage(1); cb0 && cb0(d); } };
+  }
+  $("salvo").textContent = firebaseConfig ? "🟢 Firebase conectado" : "🟡 modo teste (sem Firebase)";
+  let primeira = true;
+  api.ouvir(d => { ULT = d; if (d.inicio && !(d.j1 && d.j2)) api.set("inicio", null); mostrarJogadores(d); if (primeira) { primeira = false; carregar(d.config); } });
+}
+salaEl.onchange = conectar;
+
+/* ===== config padrão (lida do próprio jogo) ===== */
+let PADRAO = null;
+async function pegarPadrao(){
+  if (!PADRAO) {
+    const txt = await (await fetch("../index.html", { cache: "no-store" })).text();
+    const ini = txt.indexOf("const CONFIG = "), fim = txt.indexOf("\n};", ini);
+    PADRAO = new Function("return " + txt.slice(ini + 15, fim + 2))();
+  }
+  return structuredClone(PADRAO);
+}
+const CLASSES = {
+  tanque:    { nome:"🛡️ Tanque",    cor:"#9fb4ff", desc:"Aguenta muito, leva 25% menos dano e puxa a atenção de quem chega perto. Bate de perto." },
+  atirador:  { nome:"🏹 Atirador",  cor:"#ffd23f", desc:"Tiro de longe, constante." },
+  assassino: { nome:"🗡️ Assassino", cor:"#ff5a5a", desc:"Rápido. Dá um SALTO em cima de atirador/mago/suporte (recarga 6s). Bate de perto." },
+  mago:      { nome:"🔮 Mago",      cor:"#c77dff", desc:"Bola de energia lenta que EXPLODE e acerta todo mundo em volta." },
+  suporte:   { nome:"💚 Suporte",   cor:"#5dff7a", desc:"CURA o aliado mais machucado. Quando ninguém precisa, atira fraquinho." },
+};
+const FORTE = { tanque:["assassino"], atirador:["tanque"], assassino:["atirador","mago","suporte"], mago:["tanque","suporte"], suporte:["mago"] };
+const fracoContra = c => Object.keys(FORTE).filter(k => FORTE[k].includes(c));
+function renderClasses(){
+  $("tabClasses").innerHTML = Object.entries(CLASSES).map(([k,c]) => {
+    const quem = j => C.personagens[j].filter(P => P.classe === k).map(P => esc(P.nome)).join(", ") || "—";
+    return `<div class="cls" style="border-left-color:${c.cor}"><b>${c.nome}</b><p>${c.desc}</p>
+      <div class="f">✅ forte contra: ${FORTE[k].map(x => CLASSES[x].nome).join(", ")}</div>
+      <div class="w">❌ fraco contra: ${fracoContra(k).map(x => CLASSES[x].nome).join(", ")}</div>
+      <p>🔵 ${quem(1)}<br>🔴 ${quem(2)}</p></div>`;
+  }).join("");
+}
+const CAMPOS = ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo"];
+let C = null;
+async function carregar(salva){
+  const pad = await pegarPadrao();
+  if (salva && salva.versao !== pad.versao) { salva = null; api.set("config", null); aviso("♻️ Config antiga descartada — usando o padrão novo (v" + pad.versao + ")"); }
+  C = salva ? structuredClone(salva) : pad;
+  for (const k of CAMPOS) if (C[k] === undefined) C[k] = pad[k];
+  if (!C.personagens) C.personagens = pad.personagens;
+  if (!C.roteiro) C.roteiro = pad.roteiro;
+  renderTudo();
+}
+
+/* ===== salvar automático ===== */
+let timerSalvar = null;
+function mudou(redesenhar){
+  $("salvo").textContent = "✏️ salvando…";
+  clearTimeout(timerSalvar);
+  timerSalvar = setTimeout(() => {
+    C.roteiro.sort((a,b) => a.t - b.t);
+    api.set("config", C);
+    $("salvo").textContent = "✅ salvo " + new Date().toLocaleTimeString().slice(0,5) + " — vale ao reiniciar a partida";
+    renderRoteiro(); renderTimeline();
+  }, 700);
+  if (redesenhar) { renderRoteiro(); renderTimeline(); }
+}
+
+/* ===== render ===== */
+function renderTudo(){ renderRegras(); renderPers(); renderClasses(); renderRoteiro(); renderTimeline(); }
+
+function renderRegras(){
+  for (const k of CAMPOS) { const el = $(k); if (el.type === "checkbox") el.checked = !!C[k]; else el.value = C[k]; }
+}
+CAMPOS.forEach(k => $(k).addEventListener("input", e => { C[k] = e.target.type === "checkbox" ? e.target.checked : e.target.tagName === "SELECT" ? (isNaN(+e.target.value) ? e.target.value : +e.target.value) : +e.target.value; mudou(); }));
+
+function renderPers(){
+  [1,2].forEach(j => {
+    const cor = j === 1 ? "var(--azul)" : "var(--verm)";
+    $("p"+j).innerHTML = C.personagens[j].map((P, i) => `
+      <div class="pc" style="border-top-color:${P.cor || cor}">
+        <div class="foto" data-j="${j}" data-i="${i}" style="${P.foto ? `background-image:url(${esc(urlFoto(P.foto))})` : ""}">${P.foto ? "" : i+1}</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input class="nome" value="${esc(P.nome)}" data-j="${j}" data-i="${i}" data-k="nome">
+          <label style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:6px">Cor <input type="color" value="${P.cor || (j==1?"#2fa8ff":"#ff4f6d")}" data-j="${j}" data-i="${i}" data-k="cor" style="width:34px;height:24px;padding:0;border:none;background:none"></label>
+          <label style="font-size:11px;color:var(--mu)">Classe <select data-j="${j}" data-i="${i}" data-k="classe" onchange="this.dispatchEvent(new Event('input',{bubbles:true}))" style="padding:4px;font-weight:700;color:${(CLASSES[P.classe]||{}).cor||"#fff"}">${Object.entries(CLASSES).map(([k,c]) => `<option value="${k}" ${P.classe===k?"selected":""}>${c.nome}</option>`).join("")}</select></label>
+          <div style="font-size:10px;line-height:1.4"><span style="color:var(--verde)">✅ ${(FORTE[P.classe]||[]).map(x => CLASSES[x].nome.split(" ")[1]).join(", ")}</span> · <span style="color:var(--verm)">❌ ${fracoContra(P.classe).map(x => CLASSES[x].nome.split(" ")[1]).join(", ")}</span></div>
+          <label style="font-size:11px;color:var(--mu)">Preço $ <input type="number" value="${P.preco||0}" data-j="${j}" data-i="${i}" data-k="preco" style="width:80px;padding:4px;color:var(--verde);font-weight:700"></label>
+          <label style="font-size:11px;color:var(--mu)">Libera aos <input type="number" value="${P.libera}" data-j="${j}" data-i="${i}" data-k="libera" style="width:60px;padding:4px"> s</label>
+        </div>
+        <div class="stats">
+          ${[["vida","❤ Vida"],["dano","⚔ Dano"],["cad","⏱ Ataca a cada (s)"],["vel","👟 Velocidade"],["alcance","🎯 Alcance"]].map(([k,l]) =>
+            `<label>${l}<input type="number" step="0.1" value="${P[k]}" data-j="${j}" data-i="${i}" data-k="${k}"></label>`).join("")}
+          <label>&nbsp;<button class="b sec mini" onclick="limparFoto(${j},${i})">Tirar foto</button></label>
+        </div>
+      </div>`).join("");
+  });
+}
+document.addEventListener("input", e => {
+  const d = e.target.dataset; if (!C || d.j === undefined || d.i === undefined || !d.k) return;
+  const P = C.personagens[d.j][d.i]; P[d.k] = e.target.type === "number" ? +e.target.value : e.target.value; mudou(); if (d.k === "classe" || d.k === "nome") { renderClasses(); if (d.k === "classe") renderPers(); }
+});
+// foto do PC -> 160px
+let fotoAlvo = null;
+document.addEventListener("click", e => { const f = e.target.closest(".foto"); if (!f) return; fotoAlvo = f.dataset; $("fileFoto").value = ""; $("fileFoto").click(); });
+$("fileFoto").onchange = () => {
+  const file = $("fileFoto").files[0]; if (!file || !fotoAlvo) return;
+  const im = new Image(); im.onload = () => {
+    if (im.width <= 96 && im.height <= 96) {   // sprite de pixel art: mantém o PNG original nítido
+      const c = document.createElement("canvas"); c.width = im.width; c.height = im.height; c.getContext("2d").drawImage(im, 0, 0);
+      Object.assign(C.personagens[fotoAlvo.j][fotoAlvo.i], { foto: c.toDataURL("image/png"), pixel: true }); renderPers(); mudou(); return;
+    }
+    const c = document.createElement("canvas"), t = 160; c.width = c.height = t; const m = Math.min(im.width, im.height);
+    c.getContext("2d").drawImage(im, (im.width-m)/2, (im.height-m)/2, m, m, 0, 0, t, t);
+    C.personagens[fotoAlvo.j][fotoAlvo.i].foto = c.toDataURL("image/jpeg", 0.82); C.personagens[fotoAlvo.j][fotoAlvo.i].pixel = false; renderPers(); mudou();
+  }; im.src = URL.createObjectURL(file);
+};
+window.limparFoto = (j, i) => { C.personagens[j][i].foto = ""; renderPers(); mudou(); };
+
+const COLNOME = c => c < 2 ? "esquerda" : c > 4 ? "direita" : "meio";
+const LINNOME = ["frente","meio-frente","meio-trás","atrás"];
+/* previsão do dinheiro de cada compra (mesma conta do jogo) */
+let PREV = [];
+function preverDinheiro(){
+  const ganho = t => C.dinheiroInicial + C.renda * (t + t*t/(2*C.rendaCresce));
+  const gasto = {1:0, 2:0}; PREV = [];
+  C.roteiro.forEach((e, i) => {
+    if (e.tipo === "msg") return;
+    const P = (C.personagens[e.j]||[])[e.p] || {}, preco = P.preco || 0;
+    let t = Math.max(e.t, P.libera || 0); const tem = ganho(t) - gasto[e.j];
+    if (tem < preco) { while (ganho(t) - gasto[e.j] < preco && t < 3600) t += 0.25; }
+    gasto[e.j] += preco; PREV[i] = { tem, espera: t - e.t, quando: t };
+  });
+}
+function renderRoteiro(){
+  C.roteiro.sort((a,b) => a.t - b.t); preverDinheiro();
+  $("rot").innerHTML = C.roteiro.map((e, i) => {
+    const msg = e.tipo === "msg", cor = e.j == 1 ? "var(--azul)" : "var(--verm)";
+    const lista = C.personagens[e.j] || C.personagens[1];
+    const cedo = !msg && lista[e.p] && e.t < lista[e.p].libera;
+    const jogSel = `<div class="seg1"><button class="${e.j==1?"on1":""}" onclick="setEv(${i},'j',1)">J1</button><button class="${e.j==2?"on2":""}" onclick="setEv(${i},'j',2)">J2</button></div>`;
+    let meio, lugar = "";
+    if (msg) meio = `<input value="${esc(e.texto)}" oninput="setEv(${i},'texto',this.value,1)" placeholder="texto do aviso na câmera" style="width:100%">`;
+    else {
+      meio = `<div><select onchange="setEv(${i},'p',+this.value)" style="width:100%">${lista.map((P,k) => `<option value="${k}" ${e.p==k?"selected":""}>${k+1}. ${esc(P.nome)} · ${(CLASSES[P.classe]||{}).nome||""} · $${P.preco||0} (libera ${mmss(P.libera)})</option>`).join("")}</select>
+        ${cedo ? `<div class="alerta">⚠️ ainda não liberou nesse segundo — vai entrar quando liberar</div>` : ""}</div>`;
+      const pv = PREV[i] || {}, P = lista[e.p] || {};
+      lugar = `<div style="font-size:12px;line-height:1.5"><b style="color:var(--verde);font-size:15px">$${(P.preco||0).toLocaleString("pt-BR")}</b><br>
+        ${pv.espera > 0.05 ? `<span style="color:var(--ama)">⏳ junta o $ e compra em ${mmss(pv.quando)}</span>` : `<span style="color:var(--mu)">💰 terá $${Math.floor(pv.tem||0).toLocaleString("pt-BR")}</span>`}</div>`;
+    }
+    return `<div class="ev-row ${msg?"msg":""}" style="border-left-color:${cor}">
+      <label style="font-size:11px;color:var(--mu)">Tempo (m:ss)<input value="${mmss(e.t)}" onchange="setEv(${i},'t',lerTempo(this.value))" style="width:100%;font-weight:900;font-size:15px"></label>
+      <div>${jogSel}<div style="font-size:11px;color:var(--mu);margin-top:4px">${msg ? "💬 aviso" : "🛒 compra"}</div></div>
+      ${meio}
+      <div>${lugar}</div>
+      <div class="linha" style="gap:4px;flex-direction:column">
+        <button class="b mini" title="pular para 3s antes" onclick="pular(${Math.max(0, e.t-3)})">▶</button>
+        <button class="b sec mini" title="duplicar" onclick="dup(${i})">⧉</button>
+        <button class="b perigo mini" title="apagar" onclick="remover(${i})">✕</button>
+      </div></div>`;
+  }).join("") || `<p class="ajuda">Sem ações ainda.</p>`;
+}
+window.setEv = (i, k, v, semRedesenho) => {
+  const e = C.roteiro[i];
+  if (k === "cr") { e.c = v[0]; e.r = v[1]; } else e[k] = v;
+  mudou(!semRedesenho);
+};
+window.addLinha = (tipo, j) => {
+  const t = (C.roteiro.length ? Math.max(...C.roteiro.map(e => e.t)) : 0) + 3;
+  C.roteiro.push(tipo === "msg" ? { t, j, tipo:"msg", texto:"reagir" } : { t, j, p:0 });
+  mudou(true);
+  setTimeout(() => $("rot").lastElementChild?.scrollIntoView({ behavior:"smooth", block:"center" }), 50);
+};
+window.dup = i => { const e = structuredClone(C.roteiro[i]); e.t += 1; C.roteiro.splice(i+1, 0, e); mudou(true); };
+window.remover = i => { C.roteiro.splice(i, 1); mudou(true); };
+
+/* ===== linha do tempo ===== */
+let TMAX = 60;
+function renderTimeline(){
+  if (!C) return;
+  TMAX = Math.max(30, ...C.roteiro.map(e => e.t)) + 10;
+  const y = { 1: 24, m: 48, 2: 72 };
+  let h = `<div class="fx" style="top:${y[1]}px"></div><div class="fx" style="top:${y.m}px"></div><div class="fx" style="top:${y[2]}px"></div>
+    <span class="lbl" style="top:${y[1]-15}px;color:var(--azul)">J1</span><span class="lbl" style="top:${y.m-15}px;color:var(--ama)">avisos</span><span class="lbl" style="top:${y[2]-15}px;color:var(--verm)">J2</span>`;
+  for (let s = 0; s <= TMAX; s += 10) h += `<span class="seg" style="left:${s/TMAX*100}%">${mmss(s)}</span>`;
+  C.roteiro.forEach(e => {
+    const msg = e.tipo === "msg", cor = msg ? "var(--ama)" : e.j == 1 ? "var(--azul)" : "var(--verm)";
+    const tt = msg ? `${mmss(e.t)} — ${e.texto}` : `${mmss(e.t)} — J${e.j} compra ${(C.personagens[e.j][e.p]||{}).nome}`;
+    h += `<div class="ev" title="${esc(tt)}" style="left:${e.t/TMAX*100}%;top:${msg ? y.m : y[e.j]}px;background:${cor}">${msg ? "" : e.p+1}</div>`;
+  });
+  h += `<div class="play" id="play"></div>`;
+  $("tl").innerHTML = h;
+}
+$("tl").title = "clique para pular (só com partida rolando)";
+$("tl").onclick = e => { const r = $("tl").getBoundingClientRect(); pular(Math.round((e.clientX - r.left) / r.width * TMAX)); };
+
+/* ===== ao vivo ===== */
+const temJogadores = () => !!(ULT.j1 && ULT.j2);
+function tempoAtual(){ if (ULT.fim) return "fim"; return ULT.inicio && temJogadores() ? (Date.now() - ULT.inicio) / 1000 * ((C && C.acelerar) || 1) : null; }
+function mostrarJogadores(d){
+  $("jogs").innerHTML = [1,2].map(n => {
+    const p = d["j"+n], cor = n === 1 ? "var(--azul)" : "var(--verm)";
+    return `<div class="jog" style="border-left-color:${cor}">
+      ${p && p.foto ? `<img src="${esc(p.foto)}">` : `<div class="sem"></div>`}
+      <div><div class="nm">${p ? esc(p.nome) : "<span style='color:var(--mu)'>vazio</span>"}</div>
+      <div class="st">Jogador ${n} · ${p ? (p.pronto ? "✔ pronto" : "no lobby, não confirmou") : "ninguém entrou"}</div></div></div>`;
+  }).join("");
+}
+function tick(){
+  const t = tempoAtual(), est = $("estado");
+  if (t === "fim") { $("relogio").textContent = "FIM"; est.textContent = "🏆 Jogador " + ULT.fim.vencedor + " venceu"; est.className = "estado on"; const pl = $("play"); if (pl) pl.style.left = "100%"; requestAnimationFrame(tick); return; }
+  if (t === null) { $("relogio").textContent = "--"; est.textContent = "no lobby"; est.className = "estado"; }
+  else if (t < 0) { $("relogio").textContent = "-0:0" + Math.ceil(-t); est.textContent = "começando…"; est.className = "estado on"; }
+  else { $("relogio").textContent = mmss(t) + ((C && C.acelerar > 1) ? " ⚡" : ""); est.textContent = "▶ em andamento"; est.className = "estado on"; }
+  const pl = $("play"); if (pl) pl.style.left = (t === null ? -10 : Math.max(0, t) / TMAX * 100) + "%";
+  if (C) [1,2].forEach(j => {
+    const tt = t === null ? -1 : t;
+    const prox = C.roteiro.filter(e => e.j == j && e.t >= tt - 1).slice(0, 5);
+    $("prox"+j).innerHTML = prox.map(e => {
+      const falta = t === null ? e.t : e.t - t;
+      const P = C.personagens[j][e.p]||{}, txt = e.tipo === "msg" ? "💬 " + esc(e.texto) : `🛒 ${esc(P.nome)} · $${(P.preco||0).toLocaleString("pt-BR")}`;
+      return `<li class="${t !== null && falta < 3 ? "agora" : ""}"><span class="t">${t === null ? mmss(e.t) : (falta > 0 ? "em " + mmss(Math.ceil(falta)) : "agora")}</span>${txt}</li>`;
+    }).join("") || `<li style="color:var(--mu)">nada mais no roteiro</li>`;
+  });
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ===== ações ===== */
+window.$ = $; window.lerTempo = lerTempo;
+window.pular = x => {
+  if (tempoAtual() === null) { aviso("⚠️ Não tem partida rolando — use ▶ Iniciar ou 🤖 Testar sozinho primeiro"); return; }
+  api.set("fim", null); api.set("inicio", Date.now() - Math.max(0, x)*1000 / ((C && C.acelerar) || 1));
+};
+function aviso(t){ const el = $("salvo"); el.textContent = t; el.style.color = "var(--ama)"; clearTimeout(aviso.tm); aviso.tm = setTimeout(() => { el.style.color = ""; el.textContent = firebaseConfig ? "🟢 Firebase conectado" : "🟡 modo teste (sem Firebase)"; }, 3500); }
+window.pularRel = d => { const t = tempoAtual(); if (t === null || t === "fim") return; pular(Math.max(0, t + d)); };
+window.trocaLoja = v => { C.lojaFundo = v; $("lojaFundo").value = v; api.set("config", C); aviso("🖼️ Fundo da loja: " + (v === "penhasco" ? "penhasco" : "marrom")); };
+window.modoRapido = () => { api.set("fim", null); C.acelerar = Math.max(1, C.duracao / 60); api.set("config", C); if (temJogadores()) api.set("inicio", Date.now() + 2000); aviso("⚡ Modo 1 minuto ligado (partida " + C.acelerar.toFixed(0) + "x mais rápida)"); };
+window.modoNormal = () => { api.set("fim", null); C.acelerar = 1; api.set("config", C); if (temJogadores()) api.set("inicio", Date.now() + 2000); aviso("Velocidade normal"); };
+window.reiniciar = () => { api.set("fim", null); if (!temJogadores()) { aviso("⚠️ Precisa dos 2 jogadores no lobby (ou use 🤖 Testar sozinho)"); return; } api.set("inicio", Date.now() + 3500); };
+window.pararPartida = () => { api.set("fim", null); api.set("inicio", null); [1,2].forEach(n => { const d = ULT["j"+n]; if (d) api.set("j"+n, { ...d, pronto:false }); }); };
+window.voltarLobby = () => { if (!confirm("Tirar os dois jogadores e voltar pro lobby?")) return; api.set("fim", null); api.set("inicio", null); api.set("j1", null); api.set("j2", null); };
+window.resetarTudo = async () => { if (!confirm("Apagar jogadores, partida e config salva?")) return;
+  for (const k of ["inicio","j1","j2","config","fim"]) api.set(k, null); C = await pegarPadrao(); renderTudo(); };
+window.restaurarPadrao = async () => { if (!confirm("Voltar regras, personagens e roteiro pro padrão do código?")) return; api.set("config", null); C = await pegarPadrao(); renderTudo(); };
+const fotoTeste = (cor, txt) => { const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d");
+  g.fillStyle = cor; g.fillRect(0,0,128,128); g.fillStyle = "#fff"; g.font = "bold 64px sans-serif"; g.textAlign = "center"; g.fillText(txt, 64, 86); return c.toDataURL("image/jpeg", .8); };
+window.testeSozinho = () => { api.set("fim", null);
+  api.set("j1", { nome:"Teste 1", foto: fotoTeste("#2a8fe0","1"), pronto:true });
+  api.set("j2", { nome:"Teste 2", foto: fotoTeste("#e04848","2"), pronto:true });
+  api.set("inicio", Date.now() + 3500);
+  const q = sala() === "principal" ? "" : "&sala=" + encodeURIComponent(sala());
+  open("../?ver=1" + q, "_blank"); open("../?ver=2" + q, "_blank");
+};
+// atalhos de teclado no ADM
+addEventListener("keydown", e => {
+  if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if (e.key === "ArrowRight") pularRel(5); if (e.key === "ArrowLeft") pularRel(-5);
+});
+
+conectar();
+</script>
+</body>
+</html>

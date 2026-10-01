@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b1022">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="img/escudo.png">
+<title>Batalha dos YOUTUBERS</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Pixelify+Sans:wght@500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none;position:fixed;inset:0;background:#0b1022;font-family:"Pixelify Sans","Fredoka","Segoe UI",Arial,sans-serif;color:#fff}
+  canvas{display:block;width:100vw;height:100vh;height:100dvh;cursor:default;touch-action:none}
+  #btnCheia{position:fixed;right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));z-index:6;font-family:"Press Start 2P",monospace;font-size:10px;padding:8px 10px}
+  #girar{position:fixed;inset:0;z-index:9;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0b1022;color:#fff;font-family:"Press Start 2P",monospace;font-size:13px;text-align:center;line-height:1.8;padding:20px}
+  #girar .cel{width:46px;height:78px;border:5px solid #fff;border-radius:8px;animation:gira 1.6s steps(4) infinite}
+  @keyframes gira{50%{transform:rotate(-90deg)}}
+  @media (orientation: portrait) and (max-width: 900px){ body.jogando #girar{display:flex} }
+  body.jogando #btnCheia{display:none!important}
+  /* textos das câmeras: pequenos, sem fundo */
+  .camtxt{position:absolute;top:30px;font-size:clamp(9px,0.6vw,12px);line-height:1.55;letter-spacing:-1px;font-family:"Press Start 2P",monospace;color:#fff;pointer-events:none;max-width:min(300px,26vw);white-space:pre-line;
+    text-shadow:2px 0 #000,-2px 0 #000,0 2px #000,0 -2px #000,2px 2px #000,-2px -2px #000,2px -2px #000,-2px 2px #000,3px 3px 0 rgba(0,0,0,.6)}
+  .camtxt em{display:block;font-style:normal;font-size:clamp(8px,0.52vw,11px);margin-top:5px;color:#ffe14d}
+  #camA.direita{left:auto;right:36px;text-align:right}
+  #camA{left:36px} #camB{right:40px;text-align:right}
+  .camtxt .bar{margin-top:5px;width:150px;height:5px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden;display:inline-block}
+  .camtxt .bar i{display:block;height:100%;width:0;background:#ffe25b}
+  #lobby{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;cursor:auto;
+    background:#2f9cf5 url(img/lobby.png) center/cover no-repeat;image-rendering:pixelated;color:#fff;overflow:hidden;font-family:"Pixelify Sans",monospace}
+  #lobbyFundo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #lobby > *:not(canvas){position:relative;z-index:1}
+  .px{border:4px solid #0d2b0f;box-shadow:0 0 0 4px #7ee05a inset,0 0 0 8px #2f7d23 inset,6px 6px 0 rgba(0,0,0,.45);image-rendering:pixelated}
+  #lobby h1{font-size:clamp(26px,5vw,60px);text-align:center;font-weight:700;letter-spacing:3px;color:#ffe14d;
+    text-shadow:4px 0 #0d2b0f,-4px 0 #0d2b0f,0 4px #0d2b0f,0 -4px #0d2b0f,4px 4px #0d2b0f,8px 8px 0 #2f7d23;animation:flutua 2.4s steps(4) infinite}
+  @keyframes flutua{50%{transform:translateY(-8px)}}
+  @keyframes pisca{50%{opacity:.35}}
+  @keyframes pula{0%,100%{transform:translateY(0)}40%{transform:translateY(-14px)}70%{transform:translateY(2px)}}
+  #slots{display:flex;gap:40px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .slot{width:250px;padding:22px 18px;text-align:center;background:#3fa83a;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .slot.s1 .tag{background:#2fa8ff} .slot.s2 .tag{background:#ff4f6d}
+  .slot .tag{font-size:16px;padding:4px 12px;border:3px solid #0d2b0f;color:#fff;font-weight:700}
+  .slot .ft{width:120px;height:120px;background:#1f5f1b center/cover no-repeat;border:4px solid #0d2b0f;box-shadow:4px 4px 0 rgba(0,0,0,.35);image-rendering:auto}
+  .slot .ft.vazio{display:flex;align-items:center;justify-content:center;font-size:48px;color:#7ee05a}
+  .slot .nm{font-weight:700;font-size:22px;text-shadow:3px 3px 0 #0d2b0f}
+  .slot .st{font-weight:700;font-size:16px;text-shadow:2px 2px 0 #0d2b0f}
+  .slot.pronto{animation:pula .5s steps(5)}
+  .vs{font-size:56px;font-weight:700;color:#ffe14d;text-shadow:4px 4px 0 #0d2b0f,-2px -2px 0 #0d2b0f;animation:flutua 1s steps(2) infinite}
+  .btn{font-family:inherit;border:4px solid #0d2b0f;padding:10px 22px;font-size:18px;font-weight:700;color:#0d2b0f;cursor:pointer;
+    background:#ffe14d;box-shadow:inset -4px -4px 0 #d9a400,inset 4px 4px 0 #fff59a,4px 4px 0 rgba(0,0,0,.4)}
+  .btn:hover{filter:brightness(1.08);transform:translate(-1px,-1px)}
+  .btn:active{transform:translate(3px,3px);box-shadow:inset 4px 4px 0 #d9a400}
+  .btn.verde{background:#7ee05a;box-shadow:inset -4px -4px 0 #3fa83a,inset 4px 4px 0 #c6ff9e,4px 4px 0 rgba(0,0,0,.4)}
+  .btn.cinza{background:#b7c4b0;box-shadow:inset -4px -4px 0 #7c8a76,inset 4px 4px 0 #e8f0e4,4px 4px 0 rgba(0,0,0,.4)}
+  .btn:disabled{filter:grayscale(.7);opacity:.6;cursor:default;transform:none}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  #modal{position:fixed!important;inset:0;background:rgba(0,30,0,.55);display:none;align-items:center;justify-content:center;z-index:5}
+  #modal .card{background:#3fa83a;padding:24px;width:min(380px,92vw);display:flex;flex-direction:column;gap:14px;align-items:center}
+  #modal h2{font-size:24px;text-shadow:3px 3px 0 #0d2b0f}
+  .avatarPick{width:130px;height:130px;background:#1f5f1b center/cover no-repeat;border:4px solid #0d2b0f;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:15px;color:#c6ff9e;text-align:center;box-shadow:4px 4px 0 rgba(0,0,0,.35)}
+  .avatarPick:hover{outline:4px solid #ffe14d}
+  #modal input[type=text]{font-family:inherit;width:100%;padding:12px;border:4px solid #0d2b0f;background:#e8ffd9;color:#0d2b0f;font-size:20px;text-align:center;outline:none}
+  #modal input[type=text]:focus{background:#fff}
+  #msgLobby{font-weight:700;font-size:20px;color:#fff;text-shadow:3px 3px 0 #0d2b0f;min-height:24px;padding:6px 14px;background:rgba(13,43,15,.55)}
+  #msgLobby:empty{background:none}
+  @media (max-width: 700px), (max-height: 500px){
+    #lobby{gap:12px;justify-content:flex-start;padding:max(12px,env(safe-area-inset-top)) 12px 12px;overflow-y:auto}
+    #lobby h1{font-size:clamp(20px,6vw,34px)!important}
+    #slots{gap:14px}
+    .slot{width:min(170px,40vw);padding:12px 10px;gap:6px}
+    .slot .ft{width:76px;height:76px}
+    .slot .nm{font-size:16px}
+    .vs{font-size:30px}
+    .btn{font-size:14px;padding:8px 14px}
+  }
+  @media (max-height: 500px){ #lobby{justify-content:center} #lobby h1{margin-top:4px} .slot .ft{width:60px;height:60px} .slot{padding:8px} }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="btnVoltar" class="btn" style="display:none;position:absolute;left:50%;bottom:6%;transform:translateX(-50%);z-index:4;font-family:'Press Start 2P',monospace;font-size:14px;padding:14px 22px">VOLTAR AO LOBBY</button>
+<div class="camtxt" id="camA"><span></span><div class="bar"><i></i></div><em></em></div>
+<div class="camtxt" id="camB"><span></span><div class="bar"><i></i></div></div>
+
+<button id="btnCheia" class="btn" title="Tela cheia">⛶ TELA CHEIA</button>
+<div id="girar"><div class="cel"></div>Gire o celular<br>para jogar deitado</div>
+<div id="lobby">
+  <canvas id="lobbyFundo"></canvas>
+  <h1>BATALHA DOS YOUTUBERS</h1>
+  <div id="slots"></div>
+  <div id="msgLobby"></div>
+  <div style="position:absolute;bottom:8px;right:12px;font-size:12px;opacity:.7;text-shadow:2px 2px 0 #0d2b0f">v16</div>
+  <!-- compatibilidade com o código antigo -->
+  <div id="form" style="display:none"></div><div id="espera" style="display:none"></div><button id="btnPronto" style="display:none"></button>
+  <div id="modal"><div class="card px">
+    <h2 id="mTitulo">Jogador 1</h2>
+    <label class="avatarPick" id="avatarPick"><span id="avatarTxt">foto<br>(opcional)</span>
+      <input type="file" id="lFoto" accept="image/*" hidden></label>
+    <input type="text" id="lNome" placeholder="Seu nome (opcional)" maxlength="20" autocomplete="off">
+    <div class="btns"><button class="btn cinza" id="btnCancelar">Cancelar</button><button class="btn verde" id="btnSalvar">Salvar</button></div>
+  </div></div>
+</div>
+
+<script type="module">
+/* A config do Firebase fica em firebase-config.js (usada aqui e no /ADM).
+   Sem config: funciona em duas abas do MESMO navegador (para testar). */
+let firebaseConfig = null;
+try { ({ firebaseConfig } = await import("./firebase-config.js")); } catch (e) {}
+
+const sala = new URLSearchParams(location.search).get("sala") || "principal";
+let api;
+if (firebaseConfig) {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+  const { getDatabase, ref, set, update, onValue, onDisconnect } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+  const db = getDatabase(initializeApp(firebaseConfig));
+  const r = p => ref(db, "nexus/" + sala + (p ? "/" + p : ""));
+  api = {
+    ouvir: cb => onValue(r(), s => cb(s.val() || {})),
+    set: (p, v) => set(r(p), v),
+    aoSair: p => { const o = onDisconnect(r(p)); o.cancel().then(() => o.remove()); },   // fechou a aba/caiu → apaga do firebase
+    naoSair: p => onDisconnect(r(p)).cancel(),
+  };
+} else {
+  const K = "nexus_" + sala, bc = new BroadcastChannel(K);
+  const ler = () => JSON.parse(localStorage.getItem(K) || "{}");
+  const cbs = [];
+  bc.onmessage = () => cbs.forEach(cb => cb(ler()));
+  addEventListener("storage", e => { if (e.key === K) cbs.forEach(cb => cb(ler())); });
+  api = {
+    ouvir: cb => { cbs.push(cb); cb(ler()); },
+    set: (p, v) => { const d = ler(); if (v === null) delete d[p]; else d[p] = v; localStorage.setItem(K, JSON.stringify(d)); bc.postMessage(1); cbs.forEach(cb => cb(d)); },
+    aoSair: () => {}, naoSair: () => {},
+  };
+}
+window.NX = api;
+window.dispatchEvent(new Event("nx-pronto"));
+</script>
+
+<script>
+/* =====================================================================
+   CONFIGURAÇÃO — personagens (placeholders) e ROTEIRO
+   ===================================================================== */
+const CONFIG = {
+  versao: 16,               // muda quando o padrão muda: config velha salva no ADM é ignorada
+  nexusVida: 5000,
+  cooldown: 5,             // segundos entre compras (só visual, o roteiro manda)
+  cooldownMorte: 10,       // quando um personagem morre, fica esse tempo sem poder ser colocado de novo
+  ritmo: 1.4,
+  autoRecolocar: true,     // quando acaba o cooldown de morte, o youtuber recoloca o personagem sozinho
+  avisoRecolocar: 4,       // segundos de aviso antes de recolocar (aparece na câmera)
+  vencedor: 1,             // quem ganha no roteiro (1 ou 2). 0 = deixa a batalha decidir
+  duracao: 480,            // segundos até o nexus do perdedor cair (480 = 8:00)
+  acelerar: 1,             // debug: 8 = partida inteira em 1 minuto
+  maxFinal: 4,             // no último minuto e meio pode ter um pouco mais
+  maxEmCampo: 3,           // no máximo X personagens de cada lado ao mesmo tempo
+  lojaFundo: "penhasco",   // fundo da loja: "madeira" (painel marrom) ou "penhasco" (mostra o penhasco da imagem)
+  dinheiroInicial: 3,      // $ no começo
+  renda: 3,               // $ por segundo no começo (vai aumentando com o tempo)
+  rendaCresce: 60,         // a cada X segundos a renda soma mais 1x a renda inicial
+  nexusAtira: false,       // nexus atira em quem estiver atacando ele
+  focarNovo: true,         // quem está batendo no nexus troca de alvo para o personagem recém-adicionado
+  /* CLASSES (cada um é forte contra uns e fraco contra outros):
+     tanque    — aguenta muito, puxa a atenção (provoca) e leva menos dano. FORTE x assassino · FRACO x atirador, mago
+     atirador  — tiro de longe.                                            FORTE x tanque    · FRACO x assassino
+     assassino — rápido, dá um SALTO em cima de atirador/mago/suporte.      FORTE x atirador, mago, suporte · FRACO x tanque
+     mago      — bola de energia que EXPLODE em área.                       FORTE x tanque, suporte · FRACO x assassino
+     suporte   — CURA os aliados e ataca fraquinho.                         FORTE x mago     · FRACO x assassino      */
+  forte: 1.6,              // multiplicador de dano contra quem você é forte
+  fraco: 0.6,              // multiplicador de dano contra quem você é fraco
+  // 8 por jogador. foto: URL (vazio = placeholder). libera: segundo em que aparece na loja
+  personagens: {
+    1: [
+      { nome:"Alanzoka", foto:"sprites/00-alanzoka.png", pixel:true, cor:"#7b86d9", preco:1, libera:0, classe:"atirador", vida:120, dano:12, vel:1.0, alcance:5.0, cad:1.0 },
+      { nome:"Enaldinho", foto:"sprites/01-enaldinho.png", pixel:true, cor:"#ff3b3b", preco:5, libera:0, classe:"tanque", vida:380, dano:10, vel:0.8, alcance:1.3, cad:1.0 },
+      { nome:"Emily Vick", foto:"sprites/02-emily-vick.png", pixel:true, cor:"#ff5fa8", preco:20, libera:30, classe:"assassino", vida:150, dano:28, vel:1.4, alcance:1.1, cad:0.8 },
+      { nome:"JazzGhost", foto:"sprites/03-jazzghost.png", pixel:true, cor:"#c08a50", preco:50, libera:60, classe:"atirador", vida:200, dano:24, vel:0.9, alcance:5.5, cad:1.1 },
+      { nome:"Guima", foto:"sprites/04-guima.png", pixel:true, cor:"#ffc93c", preco:100, libera:100, classe:"suporte", vida:180, dano:10, vel:0.8, alcance:4.0, cad:1.2 },
+      { nome:"Giuliana Mafra", foto:"sprites/05-giuliana-mafra.png", pixel:true, cor:"#d08a50", preco:250, libera:150, classe:"mago", vida:260, dano:34, vel:0.7, alcance:4.5, cad:1.6 },
+      { nome:"Vinnicius13", foto:"sprites/06-vinnicius13.png", pixel:true, cor:"#e8323c", preco:500, libera:210, classe:"assassino", vida:340, dano:60, vel:1.5, alcance:1.2, cad:0.8 },
+      { nome:"Gato Galáctico", foto:"sprites/07-gato-galactico.png", pixel:true, cor:"#4ade6a", preco:1000, libera:270, classe:"tanque", vida:1600, dano:40, vel:0.6, alcance:1.4, cad:1.1 },
+    ],
+    2: [
+      { nome:"SaikoJoga", foto:"sprites/08-saikojoga.png", pixel:true, cor:"#a855f7", preco:1, libera:0, classe:"atirador", vida:120, dano:12, vel:1.0, alcance:5.0, cad:1.0 },
+      { nome:"T3ddy", foto:"sprites/09-t3ddy.png", pixel:true, cor:"#c98a4b", preco:5, libera:0, classe:"tanque", vida:380, dano:10, vel:0.8, alcance:1.3, cad:1.0 },
+      { nome:"Felipe Neto", foto:"sprites/10-felipe-neto.png", pixel:true, cor:"#ff7a1a", preco:20, libera:30, classe:"assassino", vida:150, dano:28, vel:1.4, alcance:1.1, cad:0.8 },
+      { nome:"Problems", foto:"sprites/11-problems.png", pixel:true, cor:"#22d3ee", preco:50, libera:60, classe:"atirador", vida:200, dano:24, vel:0.9, alcance:5.5, cad:1.1 },
+      { nome:"Mike", foto:"sprites/12-mike.png", pixel:true, cor:"#22c55e", preco:100, libera:100, classe:"suporte", vida:180, dano:10, vel:0.8, alcance:4.0, cad:1.2 },
+      { nome:"Jujubinha", foto:"sprites/13-jujubinha.png", pixel:true, cor:"#ff7ac8", preco:250, libera:150, classe:"mago", vida:260, dano:34, vel:0.7, alcance:4.5, cad:1.6 },
+      { nome:"Pac", foto:"sprites/14-pac.png", pixel:true, cor:"#3b82f6", preco:500, libera:210, classe:"assassino", vida:340, dano:60, vel:1.5, alcance:1.2, cad:0.8 },
+      { nome:"Eri o Ovo", foto:"sprites/15-eri-o-ovo.png", pixel:true, cor:"#facc15", preco:1000, libera:270, classe:"tanque", vida:1600, dano:40, vel:0.6, alcance:1.4, cad:1.1 },
+    ],
+  },
+  /* ROTEIRO: t = segundo da partida, j = jogador, p = personagem (0-7)
+     o personagem nasce do lado do nexus e anda pra frente.
+     Se não tiver dinheiro ainda, espera juntar e compra na hora.
+     tipo "msg" = só um aviso no texto da câmera                      */
+  // partida de ~8 min: começo de boa, J2 fica sem dinheiro pros fortes e o J1 vence perto de 8:00
+  roteiro: [
+    {t:3,j:1,p:0},
+    {t:5,j:2,p:0},
+    {t:20,j:1,p:1},
+    {t:24,j:2,p:1},
+    {t:40,j:1,p:2},
+    {t:45,j:2,p:2},
+    {t:65,j:1,p:3},
+    {t:70,j:2,p:3},
+    {t:105,j:1,p:4},
+    {t:110,j:2,p:4},
+    {t:160,j:1,p:5},
+    {t:165,j:2,p:5},
+    {t:215,j:1,p:6},
+    {t:220,j:2,tipo:"msg",texto:"gastou tudo nos baratinhos"},
+    {t:275,j:1,p:7},
+    {t:280,j:2,tipo:"msg",texto:"tenta juntar pro mais forte"},
+    {t:360,j:2,tipo:"msg",texto:"não tem dinheiro pro Eri!"},
+  ],
+};
+
+/* Config salva pelo painel /ADM substitui a de cima */
+let configAplicada = "";
+function aplicarConfig(c){
+  if (!c || c.versao !== CONFIG.versao) return;     // config salva de uma versão antiga: ignora
+  const s = JSON.stringify(c); if (s === configAplicada) return; configAplicada = s;
+  for (const k of ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo"]) if (c[k] !== undefined) CONFIG[k] = c[k];
+  if (c.personagens) [1,2].forEach(j => { if (c.personagens[j]) CONFIG.personagens[j] = c.personagens[j]; });
+  if (c.roteiro) CONFIG.roteiro = [...c.roteiro].sort((a,b) => a.t - b.t);
+}
+
+/* ===== estado de rede ===== */
+let EU = 0, dados = {}, inicio = null;
+const jog = { 1:{nome:"Jogador 1",foto:""}, 2:{nome:"Jogador 2",foto:""} };
+const lobby = document.getElementById("lobby");
+
+window.addEventListener("nx-pronto", () => {
+  const ver = +new URLSearchParams(location.search).get("ver");
+  if (ver === 1 || ver === 2) { EU = ver; window.ESPECTADOR = 1; }
+  let salvo = 0; try { salvo = +sessionStorage.getItem("nexus_eu") || 0; } catch(e){}
+  let primeira = true;
+  NX.ouvir(d => {
+    if (primeira) { primeira = false;
+      if (salvo && d["j"+salvo]) { EU = salvo; NX.aoSair("j"+EU); } }
+    dados = d;
+    if (d.config) aplicarConfig(d.config);
+    [1,2].forEach(j => { if (d["j"+j]) jog[j] = d["j"+j]; });
+    if (fim && !window.ESPECTADOR) {               // acabou: fica parado na tela final até clicar em "voltar ao lobby"
+      if (!(d.inicio && d.inicio !== inicio && !d.fim && d.j1 && d.j2)) return;   // só sai se o ADM reiniciar a partida
+      fim = 0; loop.fimT = 0;
+    }
+    const ini = d.j1 && d.j2 ? (d.inicio || null) : null;   // sem os 2 jogadores, não roda
+    if (ini !== inicio) { inicio = ini; novaPartida(); }
+    if (window.ESPECTADOR) { const on = !!d.inicio; lobby.style.display = on ? "none" : "flex";
+      form.style.display = "none"; espera.style.display = "flex"; slots.innerHTML = "";
+      btnPronto.style.display = "none"; msgLobby.textContent = `Visão de teste do Jogador ${EU} — aguardando o ADM iniciar`; return; }
+    atualizaEspera();
+  });
+});
+/* ===== tela cheia (tira a barra do Chrome/Safari) ===== */
+function telaCheia(){
+  const el = document.documentElement;
+  try {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      (el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : el.webkitRequestFullscreen && el.webkitRequestFullscreen())?.catch?.(() => {});
+      screen.orientation?.lock?.("landscape").catch(() => {});
+    }
+  } catch (e) {}
+  setTimeout(() => window.scrollTo(0, 1), 50);   // truque pro Safari esconder a barra
+}
+const ehCelular = matchMedia("(pointer: coarse)").matches;
+btnCheia.onclick = e => { e.stopPropagation(); telaCheia(); };
+// qualquer toque/clique (ENTRAR, SALVAR, PRONTO, ou no jogo) já tenta entrar em tela cheia no celular
+addEventListener("pointerdown", () => { if (ehCelular) telaCheia(); }, { capture: true });
+const atualizaCheia = () => { btnCheia.style.display = !ehCelular || (document.fullscreenElement || document.webkitFullscreenElement || matchMedia("(display-mode: fullscreen)").matches || matchMedia("(display-mode: standalone)").matches) ? "none" : ""; };
+document.addEventListener("fullscreenchange", atualizaCheia); document.addEventListener("webkitfullscreenchange", atualizaCheia); atualizaCheia();
+// tamanho da tela de verdade (sem a barra do navegador)
+const reajusta = () => { try { resize(); } catch (e) {} };
+window.visualViewport?.addEventListener("resize", reajusta);
+addEventListener("orientationchange", () => setTimeout(reajusta, 300));
+document.addEventListener("gesturestart", e => e.preventDefault());   // sem zoom de pinça no iPhone
+
+/* sair da tela do jogo → apaga a pessoa (o lugar dela fica vazio) */
+addEventListener("pagehide", () => { if (EU && !window.ESPECTADOR) { NX.set("j"+EU, null); NX.set("inicio", null); } });
+
+/* ===== lobby: 2 espaços (Jogador 1 e Jogador 2) ===== */
+let fotoData = "", slotEditando = 0;
+const inFoto = document.getElementById("lFoto");
+inFoto.onchange = () => {
+  const f = inFoto.files[0]; if (!f) return;
+  const im = new Image();
+  im.onload = () => {
+    const c = document.createElement("canvas"), t = 256; c.width = c.height = t;
+    const m = Math.min(im.width, im.height);
+    c.getContext("2d").drawImage(im, (im.width-m)/2, (im.height-m)/2, m, m, 0, 0, t, t);
+    fotoData = c.toDataURL("image/jpeg", 0.8); fotoAuto = false;
+    avatarPick.style.backgroundImage = `url(${fotoData})`; avatarTxt.style.display = "none";
+  };
+  im.src = URL.createObjectURL(f);
+};
+function abrirModal(j){
+  const d = dados["j"+j];
+  if (d && j !== EU) return;                         // espaço ocupado por outra pessoa
+  slotEditando = j; mTitulo.textContent = "Jogador " + j; mTitulo.style.color = j === 1 ? "#8fd8ff" : "#ffa3b3";
+  fotoData = d ? d.foto : ""; lNome.value = d && d.nome !== "Jogador " + j ? d.nome : ""; fotoAuto = !d || !!d.fotoAuto;
+  avatarPick.style.backgroundImage = fotoData ? `url(${fotoData})` : ""; avatarTxt.style.display = fotoData ? "none" : "";
+  modal.style.display = "flex"; setTimeout(() => lNome.focus(), 50);
+}
+// foto automática: inicial do nome (ou J1/J2) num quadrado pixel da cor do time
+function fotoInicial(txt, j){
+  const c = document.createElement("canvas"), t = 64; c.width = c.height = t; const g = c.getContext("2d");
+  g.fillStyle = j === 1 ? "#2fa8ff" : "#ff4f6d"; g.fillRect(0, 0, t, t);
+  g.fillStyle = "rgba(0,0,0,.18)"; for (let y = 0; y < t; y += 8) g.fillRect(0, y, t, 4);
+  g.fillStyle = "#0d2b0f"; g.fillRect(0, 0, t, 4); g.fillRect(0, t-4, t, 4); g.fillRect(0, 0, 4, t); g.fillRect(t-4, 0, 4, t);
+  g.font = `${txt.length > 1 ? 22 : 34}px "Press Start 2P", monospace`; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillStyle = "#000"; g.fillText(txt, t/2 + 3, t/2 + 5); g.fillStyle = "#fff"; g.fillText(txt, t/2, t/2 + 2);
+  return c.toDataURL("image/png");
+}
+let fotoAuto = true;
+function salvarModal(){
+  const j = slotEditando;
+  const digitado = lNome.value.trim(), nome = digitado || "Jogador " + j;
+  // sem foto (ou foto automática antiga): gera a inicial do nome, ou J1/J2
+  if (!fotoData || fotoAuto) { fotoData = fotoInicial(digitado ? [...digitado][0].toUpperCase() : "J" + j, j); fotoAuto = true; }
+  if (dados["j"+j] && j !== EU) { modal.style.display = "none"; return; }
+  if (EU && EU !== j) NX.set("j"+EU, null);          // trocou de lado
+  EU = j; try { sessionStorage.setItem("nexus_eu", EU); } catch(e){}
+  NX.set("j"+j, { nome, foto: fotoData, fotoAuto, pronto: (dados["j"+j] || {}).pronto && j === EU ? dados["j"+j].pronto : false });
+  NX.aoSair("j"+j);
+  modal.style.display = "none";
+}
+btnSalvar.onclick = salvarModal; btnCancelar.onclick = () => modal.style.display = "none";
+lNome.onkeydown = e => { if (e.key === "Enter") salvarModal(); };
+window.abrirModal = abrirModal;
+window.ficarPronto = () => { const eu = dados["j"+EU]; if (eu) NX.set("j"+EU, { ...eu, pronto: !eu.pronto }); };
+
+function atualizaEspera(){
+  const J = j => dados["j"+j];
+  const slot = j => {
+    const d = J(j), meu = j === EU;
+    if (!d) return `<div class="slot px s${j}"><div class="tag">JOGADOR ${j}</div><div class="ft vazio">?</div>
+      <div class="nm">vazio</div><button class="btn" onclick="abrirModal(${j})">ENTRAR</button></div>`;
+    const pulou = d.pronto && !(atualizaEspera.antes||{})[j]; (atualizaEspera.agora = atualizaEspera.agora || {})[j] = d.pronto;
+    return `<div class="slot px s${j} ${pulou?"pronto":""}"><div class="tag">JOGADOR ${j}</div><div class="ft" style="background-image:url(${d.foto})"></div>
+      <div class="nm">${d.nome.replace(/</g,"&lt;")}${meu?" (você)":""}</div>
+      <div class="st" style="color:${d.pronto?"#c6ff9e":"#ffe14d"}">${d.pronto?"✔ PRONTO!":"esperando…"}</div>
+      ${meu ? `<div class="btns"><button class="btn cinza" onclick="abrirModal(${j})">EDITAR</button>
+        <button class="btn ${d.pronto?"cinza":"verde"}" onclick="ficarPronto()">${d.pronto?"CANCELAR":"PRONTO!"}</button></div>` : ""}</div>`;
+  };
+  const html = slot(1) + '<div class="vs">VS</div>' + slot(2);
+  atualizaEspera.antes = { ...(atualizaEspera.agora || {}) };
+  if (html !== atualizaEspera.html) { slots.innerHTML = html; atualizaEspera.html = html; }
+  const ambos = J(1) && J(2), prontos = ambos && J(1).pronto && J(2).pronto;
+  msgLobby.textContent = !EU ? "Escolha um lado e clique em ENTRAR" : !ambos ? "Esperando o outro jogador entrar" : prontos ? "Começando…" : "Os dois precisam apertar PRONTO!";
+  // só o jogador 1 marca o início (evita os dois marcarem)
+  if (prontos && !dados.inicio && EU === 1) NX.set("inicio", Date.now() + 3500);
+  if (prontos && dados.inicio && EU) { lobby.style.display = "none"; }
+  // ADM limpou meu lugar
+  if (EU && !J(EU) && atualizaEspera.tinha) { EU = 0; try { sessionStorage.removeItem("nexus_eu"); } catch(e){} lobby.style.display = "flex"; }
+  atualizaEspera.tinha = !!(EU && J(EU));
+}
+
+/* ===== efeitos do lobby (folhas e brilhos em pixel por cima da imagem) ===== */
+(() => {
+  const c = document.getElementById("lobbyFundo"), g = c.getContext("2d");
+  const fol = Array.from({length:40}, () => ({ x:Math.random(), y:Math.random(), v:0.03+Math.random()*0.05, f:Math.random()*7, c:["#7ee05a","#3fa83a","#c6ff9e","#ffe14d"][Math.floor(Math.random()*4)] }));
+  const nuv = Array.from({length:5}, (_, i) => ({ x:Math.random(), y:0.05+i*0.07, v:0.004+Math.random()*0.006 }));
+  function quadro(ms){
+    if (lobby.style.display === "none") return requestAnimationFrame(quadro);
+    const t = ms/1000, w = c.width = c.clientWidth, h = c.height = c.clientHeight, P = Math.max(3, Math.round(w/400));
+    g.clearRect(0,0,w,h);
+    for (const n of nuv) { n.x += n.v/60; if (n.x > 1.2) n.x = -0.2; const x = Math.round(n.x*w/P)*P, y = Math.round(n.y*h/P)*P;
+      g.fillStyle = "rgba(255,255,255,.85)"; g.fillRect(x, y, P*16, P*3); g.fillRect(x+P*3, y-P*3, P*9, P*3); g.fillRect(x+P*6, y-P*5, P*4, P*2); }
+    for (const f of fol) { f.y += f.v/60; if (f.y > 1.05) { f.y = -0.05; f.x = Math.random(); }
+      const x = Math.round((f.x*w + Math.sin(t*1.4+f.f)*30)/P)*P, y = Math.round(f.y*h/P)*P;
+      g.fillStyle = f.c; g.fillRect(x, y, P*2, P); g.fillRect(x+P, y+P, P, P); }
+    requestAnimationFrame(quadro);
+  }
+  requestAnimationFrame(quadro);
+})();
+
+/* ===== mundo: visão lateral (plataforma) =====
+   x = posição na pista (0 = nexus do J1, PISTA = nexus do J2)
+   y = profundidade pequena (só pra não ficar todo mundo em fila)  */
+const PISTA = 22;
+const NEXUS = { 1:{ x:0.2, y:0 }, 2:{ x:PISTA-0.2, y:0 } };
+const nascX = j => j === 1 ? 1.5 : PISTA - 1.5;
+
+/* ===== MARÉ DA BATALHA (roteiro): a frente vai e volta entre os nexus =====
+   empurrao(t) = +1 → time vencedor em cima do nexus do perdedor; -1 → perdedor em cima do nexus do vencedor */
+const PERIODO = 110;     // segundos de um vai-e-volta completo
+function empurrao(t){
+  const D = CONFIG.duracao, fimPush = Math.min(50, D*0.12);
+  if (t >= D - fimPush) return Math.min(1, 0.4 + (t - (D - fimPush)) / fimPush * 1.2);   // final: vencedor empurra até o fim
+  return Math.sin(2*Math.PI * t / PERIODO) * Math.min(1, 0.6 + t / D);                  // vai e volta, cada vez mais forte
+}
+function frenteX(t){                   // posição da frente na pista (0 = nexus J1, PISTA = nexus J2)
+  const meio = PISTA/2, amp = meio - 2.2, e = empurrao(t), lado = CONFIG.vencedor === 2 ? -1 : 1;
+  return meio + e * amp * lado;
+}
+// quanto do dano de cada nexus já "deveria" ter acontecido (só cai quando o inimigo está em cima dele)
+let PRESS = null;
+function calcPressao(){
+  const D = CONFIG.duracao, passo = 0.5, ac = { v:[0], p:[0] };
+  for (let t = passo; t <= D + 0.01; t += passo) { const e = empurrao(t);
+    ac.p.push(ac.p.at(-1) + Math.max(0, e - 0.35) * passo); ac.v.push(ac.v.at(-1) + Math.max(0, -e - 0.35) * passo); }
+  PRESS = { passo, p: ac.p.map(x => x / ac.p.at(-1)), v: ac.v.map(x => x / (ac.v.at(-1) || 1)) };
+  // momentos em que cada lado começa a avançar (pra comprar reforço logo antes)
+  PRESS.viradas = [];
+  let ant = empurrao(0);
+  for (let t = 1; t <= D; t += 1) { const e = empurrao(t);
+    if (ant < 0.3 && e >= 0.3) PRESS.viradas.push({ t, lado: CONFIG.vencedor || 1 });
+    if (ant > -0.3 && e <= -0.3) PRESS.viradas.push({ t, lado: CONFIG.vencedor === 2 ? 1 : 2 });
+    ant = e; }
+}
+let idxV = 0;
+// compra o melhor personagem que dá pra comprar agora (é o "reforço" que faz o time avançar)
+function comprarReforco(j){
+  const L = CONFIG.personagens[j]; let melhor = -1;
+  L.forEach((P, i) => { if (simT >= P.libera && grana[j] >= (P.preco||0) && (voltaEm[j][i]||0) <= simT && !unid.some(u => u.j===j && u.p===i && u.vida>0) && (melhor < 0 || (P.preco||0) > (L[melhor].preco||0))) melhor = i; });
+  if (melhor >= 0) { adicionar({ t:simT, j, p:melhor, reforco:true }); msgs[j] = { texto: "reforço! seu time vai avançar", ate: simT + 3 }; }
+}
+const pressao = (qual, t) => { if (!PRESS) calcPressao(); const i = Math.min(PRESS[qual].length - 1, Math.max(0, Math.floor(t / PRESS.passo))); return PRESS[qual][i]; };
+
+/* ===== simulação determinística (igual nos dois PCs) ===== */
+const DT = 1/30;
+let simT, unid, tiros, nx, idxR, msgs, fim, prox_id, cdFim, voltaEm, fila, agenda, grana;
+function novaPartida(){
+  try { FX.limpar(); } catch (e) {}
+  PRESS = null; idxV = 0;
+  simT = 0; unid = []; tiros = []; idxR = 0; msgs = {1:null,2:null}; fim = 0; prox_id = 1;
+  nx = { 1:{vida:CONFIG.nexusVida, cd:0, hit:0}, 2:{vida:CONFIG.nexusVida, cd:0, hit:0} };
+  cdFim = {1:0,2:0}; voltaEm = {1:{},2:{}}; fila = []; agenda = [];
+  grana = { 1:CONFIG.dinheiroInicial, 2:CONFIG.dinheiroInicial };
+}
+novaPartida();
+
+const ENTRADA = 0.55;   // tempo da carta voando até o campo
+function adicionar(e){
+  const P = CONFIG.personagens[e.j][e.p], preco = P.preco || 0;
+  if ((voltaEm[e.j][e.p] || 0) > simT || simT < P.libera || grana[e.j] < preco) { fila.push(e); return; }
+  if (unid.some(u => u.j === e.j && u.p === e.p && u.vida > 0)) return;   // já está em campo
+  if (unid.filter(u => u.j === e.j && u.vida > 0).length >= ((simT >= CONFIG.duracao - 90 ? CONFIG.maxFinal : CONFIG.maxEmCampo) || 99)) { if (!e.reforco) fila.push(e); return; }   // campo cheio: espera alguém sair
+  agenda = agenda.filter(a => !(a.j === e.j && a.p === e.p));
+  grana[e.j] -= preco;
+  const prof = ((prox_id * 0.618) % 1 - 0.5) * 3;
+  const u = { id: prox_id++, j:e.j, p:e.p, x:nascX(e.j), y:prof, vida:P.vida, max:P.vida, cd:0.5, nasceu:simT, alvo:null, forcado:null };
+  unid.push(u); cdFim[e.j] = simT + CONFIG.cooldown; FX.compra(u, preco);
+  if (CONFIG.focarNovo) {
+    const N = NEXUS[e.j];
+    for (const o of unid) if (o.j !== e.j && o.vida > 0 && Math.abs(o.x - N.x) < 4.5) o.forcado = u;
+  }
+}
+const dist = (a,b) => Math.hypot(a.x-b.x, (a.y-b.y)*0.5);
+const ativo = u => u.vida > 0 && simT - u.nasceu >= ENTRADA;
+
+function passo(){
+  if (fim) return;                     // acabou: o jogo para (ninguém mais nasce/ataca)
+  simT += DT;
+  // renda: vai aumentando com o tempo
+  for (const j of [1,2]) grana[j] += CONFIG.renda * (1 + simT / CONFIG.rendaCresce) * DT;
+  for (const e of fila.splice(0)) adicionar(e);
+  if (CONFIG.vencedor) { if (!PRESS) calcPressao();
+    while (idxV < PRESS.viradas.length && PRESS.viradas[idxV].t - 4 <= simT) { comprarReforco(PRESS.viradas[idxV].lado); idxV++; } }
+  for (const e of agenda.filter(a => a.t <= simT)) { agenda.splice(agenda.indexOf(e), 1); adicionar(e); }
+  while (idxR < CONFIG.roteiro.length && CONFIG.roteiro[idxR].t <= simT) {
+    const e = CONFIG.roteiro[idxR++];
+    if (e.tipo === "msg") msgs[e.j] = { texto:e.texto, ate:simT+3 }; else adicionar(e);
+  }
+  if (fim) return;
+  const BT = DT * CONFIG.ritmo;   // tempo de batalha
+  for (const u of unid) {
+    if (!ativo(u)) continue;
+    const P = CONFIG.personagens[u.j][u.p], inim = u.j===1?2:1, cl = P.classe || "atirador";
+    u.cdPoder = (u.cdPoder || 0) - BT;
+    if (u.forcado && !ativo(u.forcado)) u.forcado = null;
+    // SUPORTE: cura o aliado mais machucado por perto
+    if (cl === "suporte") {
+      let fer = null, menor = 0.92;
+      for (const o of unid) if (o.j === u.j && o !== u && ativo(o) && dist(u,o) <= P.alcance) { const f = o.vida/o.max; if (f < menor) { menor = f; fer = o; } }
+      if (fer && (u.cd -= BT) <= 0) { u.cd = P.cad; u.atk = simT; u.ax = Math.sign(fer.x - u.x) || 1;
+        tiros.push({ x:u.x, y:u.y, alvo:fer, dono:u.j, cura: P.dano*3, v:7, t:0, rast:[], tipo:"cura" }); continue; }
+    }
+    let alvo = u.forcado, d = alvo ? dist(u, alvo) : 1e9;
+    if (!alvo) {
+      // provocação: um tanque inimigo perto puxa a atenção
+      for (const o of unid) if (o.j !== u.j && ativo(o) && classeDe(o) === "tanque") { const dd = dist(u,o); if (dd < 2.6 && dd < d) { d = dd; alvo = o; } }
+      // assassino procura atirador/mago/suporte num raio maior
+      if (!alvo && cl === "assassino") for (const o of unid) if (o.j !== u.j && ativo(o) && ["atirador","mago","suporte"].includes(classeDe(o))) { const dd = dist(u,o); if (dd < 7 && dd < d) { d = dd; alvo = o; } }
+      if (!alvo) for (const o of unid) if (o.j !== u.j && ativo(o)) { const dd = dist(u,o); if (dd < d - 1e-6) { d = dd; alvo = o; } }
+    }
+    const aggro = cl === "assassino" ? 7 : Math.max(4.5, P.alcance + 1.5);
+    if (!alvo || (d > aggro && !u.forcado)) { alvo = "nexus"; d = Math.abs(u.x - NEXUS[inim].x) - 0.9; }
+    u.batendoNexus = alvo === "nexus" && d <= P.alcance;
+    const T = alvo === "nexus" ? NEXUS[inim] : alvo;
+    // ASSASSINO: salto em cima do alvo
+    if (cl === "assassino" && alvo !== "nexus" && d > P.alcance && d < 5.5 && u.cdPoder <= 0) {
+      const lado = Math.sign(u.x - T.x) || 1, x0 = u.x, y0 = u.y;
+      u.x = T.x + lado*0.8; u.y = T.y; u.cdPoder = 6; u.salto = { t:simT, x0, y0 }; u.cd = 0.15;
+      FX.salto(u, x0, y0); continue;
+    }
+    if (d > P.alcance) {
+      const dx = T.x - u.x, dy = (T.y - u.y) * 0.3, m = Math.hypot(dx, dy) || 1;
+      u.x += dx/m*P.vel*BT; u.y += dy/m*P.vel*BT*0.4; u.andando = simT; u.vx = Math.sign(dx);
+    } else if ((u.cd -= BT) <= 0) {
+      u.cd = P.cad; u.atk = simT; u.ax = Math.sign(T.x - u.x) || (u.j===1?1:-1);
+      if (cl === "mago") { tiros.push({ x:u.x, y:u.y, alvo, dono:u.j, dano:P.dano, v:4.5, t:0, rast:[], tipo:"magia", atk:u }); FX.muzzle(u); }
+      else if (cl === "atirador" || cl === "suporte") { tiros.push({ x:u.x, y:u.y, alvo, dono:u.j, dano:P.dano, v:7, t:0, rast:[], tipo:"tiro", atk:u }); FX.muzzle(u); }
+      else { dano(alvo, P.dano, inim, u); FX.golpe(u, T, cl); }    // corpo a corpo (tanque/assassino)
+    }
+    // separação: um não fica em cima do outro
+    for (const o of unid) if (o !== u && ativo(o)) { const dd = dist(u,o), lim = o.j === u.j ? 1.5 : 1.1; if (dd < lim && dd > 0) { const f = (lim-dd)*0.09; u.x += (u.x-o.x)/dd*f*(o.j === u.j ? 1 : 0.6); u.y += ((u.y-o.y)/dd || (u.id%2?1:-1))*f*2.2; } }
+    u.y = Math.max(-1.6, Math.min(1.6, u.y));
+    if (CONFIG.vencedor) {     // ninguém passa da linha de frente (com folga pra trocar golpes)
+      const fx = frenteX(simT), folga = 1.4;
+      const fora = u.j === 1 ? u.x - (fx + folga) : (fx - folga) - u.x;
+      if (fora > 0) {   // a frente inimiga passou por cima: recua apanhando
+        u.x += (u.j === 1 ? -1 : 1) * Math.min(fora, P.vel*BT*1.2);
+        u.vida -= u.max * 0.12 * BT; u.hit = simT;
+      }
+    }
+    u.x = Math.max(1, Math.min(PISTA-1, u.x));
+  }
+  if (CONFIG.nexusAtira) for (const j of [1,2]) {
+    const N = NEXUS[j]; nx[j].cd -= BT;
+    let alvo = null, bd = 3.6;
+    for (const u of unid) if (u.j !== j && ativo(u)) { const dd = Math.abs(u.x - N.x) - (u.batendoNexus ? 5 : 0); if (dd < bd) { bd = dd; alvo = u; } }
+    if (alvo && nx[j].cd <= 0) { nx[j].cd = 1.0; tiros.push({ x:N.x, y:N.y, alvo, dono:j, dano:55, v:9, nexus:1, t:0, rast:[] }); nx[j].tiro = simT; }
+  }
+  for (const t of tiros) {
+    t.t += BT;
+    const T = t.alvo === "nexus" ? NEXUS[t.dono===1?2:1] : t.alvo;
+    const d = Math.hypot(T.x - t.x, T.y - t.y);
+    if (d < 0.25 || (t.alvo !== "nexus" && t.alvo.vida <= 0)) {
+      if (d < 0.25) {
+        if (t.tipo === "cura") { t.alvo.vida = Math.min(t.alvo.max, t.alvo.vida + t.cura); FX.cura(t.alvo, t.cura); }
+        else if (t.tipo === "magia") {    // explosão em área
+          FX.explosao(T, t.dono);
+          if (t.alvo === "nexus") dano("nexus", t.dano, t.dono===1?2:1, t.atk);
+          for (const o of unid) if (o.j !== t.dono && ativo(o) && dist(o, T) < 1.5) dano(o, t.dano, 0, t.atk);
+        } else dano(t.alvo, t.dano, t.dono===1?2:1, t.atk);
+      }
+      t.morto = 1; }
+    else { t.rast.push({x:t.x, y:t.y}); if (t.rast.length > 7) t.rast.shift(); t.x += (T.x-t.x)/d*t.v*BT; t.y += (T.y-t.y)/d*t.v*BT; }
+  }
+  tiros = tiros.filter(t => !t.morto);
+  for (const u of unid) if (u.vida <= 0 && u.morte === undefined) { u.morte = simT; FX.morte(u); voltaEm[u.j][u.p] = simT + CONFIG.cooldownMorte;
+    // acabou o cooldown -> aviso na câmera -> recoloca
+    if (CONFIG.autoRecolocar) agenda.push({ t: voltaEm[u.j][u.p] + CONFIG.avisoRecolocar, avisoDe: voltaEm[u.j][u.p], j:u.j, p:u.p, auto:true }); }
+  unid = unid.filter(u => u.vida > 0 || simT - u.morte < 0.6);
+  if (CONFIG.vencedor) {
+    const perd = CONFIG.vencedor === 1 ? 2 : 1, venc = CONFIG.vencedor;
+    // curva: começa devagar e acelera no final (chega a 0 em "duracao")
+    const f = Math.min(1, simT / CONFIG.duracao), alvo = simT >= CONFIG.duracao ? 0 : CONFIG.nexusVida * (1 - pressao("p", simT));
+    if (nx[perd].vida > alvo + 1) {
+      const tira = nx[perd].vida - alvo;
+      if (tira >= CONFIG.nexusVida * 0.006 || alvo <= 0) {     // tira em pedacinhos (parece golpe)
+        nx[perd].vida = Math.max(0, alvo); nx[perd].hit = simT; FX.hit({ x:NEXUS[perd].x, y:0 }, tira, true, perd);
+      }
+    }
+    if (simT < CONFIG.duracao) nx[perd].vida = Math.max(nx[perd].vida, alvo * 0.96, 1);   // golpes reais não adiantam o fim
+    // o vencedor também vai apanhando aos poucos (termina com ~35%), mas nunca abaixo da curva
+    const alvoV = CONFIG.nexusVida * (1 - 0.6 * pressao("v", simT));
+    if (nx[venc].vida > alvoV + 1 && nx[venc].vida - alvoV >= CONFIG.nexusVida * 0.006) { const tira = nx[venc].vida - alvoV;
+      nx[venc].vida = alvoV; nx[venc].hit = simT; FX.hit({ x:NEXUS[venc].x, y:0 }, tira, true, venc); }
+    nx[venc].vida = Math.max(nx[venc].vida, alvoV * 0.92);
+  }
+  for (const j of [1,2]) if (nx[j].vida <= 0 && !fim) { fim = j===1 ? 2 : 1; FX.explodeNexus(j); try { if (EU === 1 && !window.ESPECTADOR || window.ESPECTADOR === 1 && EU === 1) NX.set("fim", { vencedor: fim, em: Date.now() }); } catch (e) {} }
+}
+const classeDe = u => (CONFIG.personagens[u.j][u.p] || {}).classe || "atirador";
+const FORTE = { tanque:["assassino"], atirador:["tanque"], assassino:["atirador","mago","suporte"], mago:["tanque","suporte"], suporte:["mago"] };
+function mult(atk, alvo){
+  if (!atk || alvo === "nexus") return 1;
+  const a = classeDe(atk), b = classeDe(alvo);
+  if ((FORTE[a]||[]).includes(b)) return CONFIG.forte;
+  if ((FORTE[b]||[]).includes(a)) return CONFIG.fraco;
+  return 1;
+}
+function dano(alvo, v, ladoNexus, atk){
+  if (alvo !== "nexus" && atk) { const m = mult(atk, alvo); v *= m; if (m > 1 && alvo.vida > 0) FX.critico(alvo); }
+  if (alvo !== "nexus" && classeDe(alvo) === "tanque") v *= 0.75;      // escudo do tanque
+  if (alvo === "nexus") { nx[ladoNexus].vida = Math.max(0, nx[ladoNexus].vida - v); nx[ladoNexus].hit = simT; FX.hit({ x:NEXUS[ladoNexus].x, y:0, z:1.6 }, v, true, ladoNexus); }
+  else if (alvo.vida > 0) { alvo.vida -= v; alvo.hit = simT; FX.hit(alvo, v, false, alvo.j); }
+}
+
+/* ===== EFEITOS (juice) — só visual ===== */
+const FX = {
+  on: true, parts: [], nums: [], aneis: [], textos: [], cortes: [], fumacas: [], shake: 0, flashTela: 0, confete: [], voos: [], moedas: [], gastos: [],
+  add(o){ if (this.on && this.parts.length < 700) this.parts.push(o); },
+  compra(u, preco){
+    if (!this.on) return;
+    if (u.j === (EU||1)) {
+      this.voos.push({ j:u.j, p:u.p, x:u.x, y:u.y, t:0 });               // carta voando pro campo
+      this.gastos.push({ v:preco, t:0 });                                  // "-$100"
+      for (let i=0;i<Math.min(14, 3 + Math.round(Math.log2(preco+1)*1.5)); i++) this.moedas.push({ t:-i*0.03, p:u.p, s:Math.random() });
+    }
+    setTimeout(() => this.spawn(u), ENTRADA*1000);
+  },
+  spawn(u){ if (!this.on) return;
+    this.aneis.push({ x:u.x, y:u.y, t:0, cor:corDe(u.j), max:1.4 });
+    for (let i=0;i<20;i++){ const a=Math.random()*Math.PI, v=0.6+Math.random()*1.6;
+      this.add({ x:u.x, y:u.y, z:0, vx:Math.cos(a)*v*(Math.random()<.5?-1:1), vy:0, vz:1.5+Math.random()*2.5, vida:0.7, t:0, cor:"#d9e6ff", tam:3+Math.random()*3 }); }
+    this.shake = Math.max(this.shake, 5); },
+  salto(u, x0, y0){ if (!this.on) return;
+    // silhueta preta que vira fumaça no lugar antigo + rastro até o novo
+    this.fumacas.push({ j:u.j, p:u.p, x0, y0, x:u.x, y:u.y, t:0 });
+    for (let i=0;i<16;i++) this.add({ x:x0+(Math.random()-.5)*0.6, y:y0, z:0.3+Math.random()*1.6, vx:(Math.random()-.5)*0.8, vy:0, vz:0.6+Math.random(), vida:0.7, t:0, cor:i%3?"#111":"#3a3a3a", tam:4+Math.random()*4, fumaca:1 });
+    for (let i=0;i<14;i++){ const f = i/13; this.add({ x:x0+(u.x-x0)*f, y:y0+(u.y-y0)*f, z:0.7+Math.sin(f*Math.PI)*0.8, vx:0, vy:0, vz:0.2, vida:0.5, t:-f*0.18, cor:i%2?"#111":"#2a2a2a", tam:5, fumaca:1 }); }
+    for (let i=0;i<10;i++) this.add({ x:u.x+(Math.random()-.5)*0.5, y:u.y, z:0.3+Math.random(), vx:(Math.random()-.5)*0.8, vy:0, vz:0.5+Math.random(), vida:0.5, t:-0.18, cor:"#1a1a1a", tam:4+Math.random()*3, fumaca:1 });
+    this.shake = Math.max(this.shake, 3); },
+  golpe(u, T, cl){ if (!this.on) return;
+    this.cortes.push({ x:(u.x+T.x)/2, y:u.y, t:0, cor: cl === "tanque" ? "#c9d4ff" : "#ff5a5a", dir: Math.sign(T.x-u.x) || 1 }); },
+  cura(o, v){ if (!this.on) return;
+    this.nums.push({ x:o.x, y:o.y, t:0, v:"+"+Math.round(v), cor:"#5dff7a" });
+    for (let i=0;i<8;i++) this.add({ x:o.x+(Math.random()-.5)*0.6, y:o.y, z:0.5+Math.random(), vx:0, vy:0, vz:2+Math.random()*2, vida:0.7, t:0, cor:"#5dff7a", tam:3, brilho:1 }); },
+  explosao(T, dono){ if (!this.on) return;
+    this.aneis.push({ x:T.x, y:T.y||0, t:0, cor:"#c77dff", max:1.6 }); this.aneis.push({ x:T.x, y:T.y||0, t:-0.08, cor:"#fff", max:1.1 });
+    for (let i=0;i<22;i++){ const a=Math.random()*7, sp=1.5+Math.random()*3;
+      this.add({ x:T.x, y:T.y||0, z:1, vx:Math.cos(a)*sp, vy:0, vz:1+Math.random()*3, vida:0.6, t:0, cor:i%2?"#c77dff":"#ffd6ff", tam:3+Math.random()*3, brilho:1 }); }
+    this.shake = Math.max(this.shake, 6); },
+  critico(o){ if (!this.on || this.textos.length > 20) return; this.textos.push({ x:o.x, y:o.y, t:0, v:"FORTE!", cor:"#ff9f1a" }); },
+  muzzle(u){ for (let i=0;i<4;i++) this.add({ x:u.x+u.ax*0.3, y:u.y, z:1.1, vx:u.ax*2+(Math.random()-.5), vy:0, vz:Math.random(), vida:0.25, t:0, cor:corDe(u.j), tam:3, brilho:1 }); },
+  hit(o, v, nexus, lado){ if (!this.on) return;
+    const n = 6 + (nexus ? 6 : 0);
+    for (let i=0;i<n;i++){ const a=Math.random()*7, sp=1+Math.random()*2.5;
+      this.add({ x:o.x, y:o.y||0, z:nexus?1.8:1.0, vx:Math.cos(a)*sp, vy:0, vz:1+Math.random()*2.5, vida:0.45, t:0, cor:i%3?"#fff3b0":corDe(lado), tam:2+Math.random()*3, brilho:1 }); }
+    if (this.nums.length < 60) this.nums.push({ x:o.x+(Math.random()-.5)*0.4, y:o.y||0, t:0, v:Math.round(v), nexus, cor: nexus ? "#ffd84a" : "#fff" });
+    if (nexus) this.shake = Math.max(this.shake, 7); },
+  morte(u){ if (!this.on) return;
+    for (let i=0;i<26;i++){ const a=Math.random()*7, sp=1.5+Math.random()*3;
+      this.add({ x:u.x, y:u.y, z:1, vx:Math.cos(a)*sp, vy:0, vz:2+Math.random()*3, vida:0.9, t:0, cor:i%2?corDe(u.j):"#fff", tam:3+Math.random()*4, brilho:1 }); }
+    this.aneis.push({ x:u.x, y:u.y, t:0, cor:"#fff", max:1.8 });
+    this.nums.push({ x:u.x, y:u.y, t:0, v:"💀", cor:"#fff", nexus:true });
+    this.shake = Math.max(this.shake, 6); },
+  explodeNexus(j){ this.shake = 0; this.flashTela = 0; this.confete = []; return;
+    for (let i=0;i<120;i++){ const a=Math.random()*7, sp=2+Math.random()*6;
+      this.parts.push({ x:NEXUS[j].x, y:0, z:1.8, vx:Math.cos(a)*sp, vy:0, vz:3+Math.random()*6, vida:1.6, t:0, cor:i%2?corDe(j):"#fff", tam:4+Math.random()*6, brilho:1 }); }
+    const cores = ["#2fa8ff","#ff4f6d","#ffe25b","#6fe08c","#fff","#c77dff"];
+    for (let i=0;i<160;i++) this.confete.push({ x:Math.random(), y:-Math.random()*0.6, vy:0.12+Math.random()*0.2, vx:(Math.random()-.5)*0.05, r:Math.random()*7, vr:(Math.random()-.5)*8, cor:cores[i%cores.length] }); },
+  passo(dt){
+    for (const p of this.parts){ p.t += dt; if (p.t < 0) continue; p.x += p.vx*dt; p.z += p.vz*dt; if (p.fumaca) { p.tam *= 1 + dt*1.2; continue; } p.vz -= 9*dt; if (p.z < 0){ p.z = 0; p.vz *= -0.35; p.vx *= 0.6; } }
+    this.parts = this.parts.filter(p => p.t < p.vida);
+    for (const n of this.nums) n.t += dt; this.nums = this.nums.filter(n => n.t < 0.9);
+    for (const a of this.aneis) a.t += dt; this.aneis = this.aneis.filter(a => a.t < 0.5);
+    for (const x of this.textos) x.t += dt; this.textos = this.textos.filter(x => x.t < 0.8);
+    for (const x of this.cortes) x.t += dt; this.cortes = this.cortes.filter(x => x.t < 0.2);
+    for (const x of this.fumacas) x.t += dt; this.fumacas = this.fumacas.filter(x => x.t < 0.6);
+    for (const v of this.voos) v.t += dt; this.voos = this.voos.filter(v => v.t < ENTRADA);
+    for (const m of this.moedas) m.t += dt; this.moedas = this.moedas.filter(m => m.t < 0.6);
+    for (const g of this.gastos) g.t += dt; this.gastos = this.gastos.filter(g => g.t < 1.2);
+    for (const c of this.confete){ c.y += c.vy*dt; c.x += c.vx*dt + Math.sin(c.y*10)*0.002; c.r += c.vr*dt; }
+    this.confete = this.confete.filter(c => c.y < 1.1);
+    this.shake *= Math.pow(0.001, dt); this.flashTela = Math.max(0, this.flashTela - dt*1.5);
+  },
+  limpar(){ this.parts = []; this.nums = []; this.aneis = []; this.textos = []; this.cortes = []; this.fumacas = []; this.confete = []; this.voos = []; this.moedas = []; this.gastos = []; this.shake = 0; this.flashTela = 0; },
+};
+const AMB = Array.from({length:40}, () => ({ x:Math.random(), y:Math.random()*0.6, s:Math.random()*2+1, f:Math.random()*7, v:0.005+Math.random()*0.012 }));
+const ESTRELAS = Array.from({length:110}, () => ({ x:Math.random(), y:Math.random()*0.55, s:Math.random()*1.6+.3, f:Math.random()*7 }));
+
+/* ===== projeção lateral (o seu nexus sempre na esquerda) ===== */
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const FONTE = '"Press Start 2P", "Pixelify Sans", monospace';
+const CHAO_IMG_Y = 618, IMG_W = 1672, IMG_H = 941;   // linha onde os personagens pisam na imagem do cenário
+let W, H, CHAO, MX, U, LOJA_H, PX, SC;
+function resize(){
+  const vv = window.visualViewport;
+  W = Math.round(vv ? vv.width : innerWidth); H = Math.round(vv ? vv.height : innerHeight);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); cv.style.width = W + "px"; cv.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  PX = Math.max(2, Math.round(Math.min(W, H*1.78) / 480));      // tamanho do "pixel" da UI
+  LOJA_H = Math.min(230, Math.round(H*0.29));
+  SC = Math.max(W / IMG_W, (H - LOJA_H + 160) / IMG_H);
+  CHAO = Math.round(H - LOJA_H - 40*SC);
+  MX = W*0.055; U = (W - 2*MX) / PISTA;
+  ctx.imageSmoothingEnabled = false;
+}
+resize(); addEventListener("resize", resize);
+function proj(x, y){
+  if (EU === 2) x = PISTA - x;                      // jogador 2 vê o próprio nexus na esquerda
+  return { x: MX + x*U, y: CHAO + (y||0)*30*SC, k: U/62 };
+}
+const corDe = j => j === 1 ? "#2fa8ff" : "#ff4f6d";   // J1 sempre azul, J2 sempre vermelho
+const TONS = { 1:["#0b3a78","#1d6fd1","#2fa8ff","#8fd8ff","#ffffff"], 2:["#6e0f2a","#c2213f","#ff4f6d","#ffa3b3","#ffffff"] };
+const CLASSES = {
+  tanque:    { nome:"TANQUE",    cor:"#9fb4ff" },
+  atirador:  { nome:"ATIRADOR",  cor:"#ffd23f" },
+  assassino: { nome:"ASSASSINO", cor:"#ff5a5a" },
+  mago:      { nome:"MAGO",      cor:"#c77dff" },
+  suporte:   { nome:"SUPORTE",   cor:"#5dff7a" },
+};
+const snap = v => Math.round(v / PX) * PX;
+
+/* ===== imagens ===== */
+const IM = {};
+function img(u){ if(!u) return null; if(!IM[u]){ IM[u]=new Image(); IM[u].src=u; } const i=IM[u]; return i.complete&&i.naturalWidth?i:null; }
+const SIL = {};
+function silhueta(im, cor){
+  const key = im.src + cor; if (SIL[key]) return SIL[key];
+  const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+  const g = c.getContext("2d"); g.drawImage(im, 0, 0); g.globalCompositeOperation = "source-in"; g.fillStyle = cor; g.fillRect(0, 0, c.width, c.height);
+  return SIL[key] = c;
+}
+const SPR = {};
+function sprite(nome, linhas, pal){
+  const key = nome + pal.join(); if (SPR[key]) return SPR[key];
+  const h = linhas.length, w = Math.max(...linhas.map(l => l.length));
+  const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d");
+  linhas.forEach((l, y) => [...l].forEach((ch, x) => { const i = "abcdefghij".indexOf(ch); if (i >= 0 && pal[i]) { g.fillStyle = pal[i]; g.fillRect(x, y, 1, 1); } }));
+  return SPR[key] = c;
+}
+function desenharSprite(s, x, y, escala, centro){
+  ctx.imageSmoothingEnabled = false;
+  const w = s.width*escala, h = s.height*escala;
+  ctx.drawImage(s, Math.round(centro ? x - w/2 : x), Math.round(y), w, h);
+}
+const MOEDA = [
+  ["..aaaa..",".abbbba.","abccccba","abcdcdba","abcdccba","abccccba",".abbbba.","..aaaa.."],
+  ["...aa...","..abba..",".abccba.",".abdcba.",".abccba.",".abccba.","..abba..","...aa..."],
+  ["...aa...","...ab...","...ac...","...ad...","...ac...","...ac...","...ab...","...aa..."],
+];
+const PAL_MOEDA = ["#7a4a00","#d98e04","#ffd23f","#fff3a8"];
+const CRISTAL = [
+  ".......a.......","......aba......",".....abcba.....","....abcdcba....","...abccdccba...","..abcccdcccba..",".abccccdccccba.",
+  "abcccccdcccccba","abccccdddccccba","abcccdddddcccba",".abccdddddccba.","..abcddddcba...","...abcdddcba...","....abcdcba....",
+  ".....abcba.....","......aba......",".......a.......",
+];
+
+/* ===== caixas e textos em pixel art ===== */
+function pbox(x, y, w, h, fundo, borda, luz){
+  x = snap(x); y = snap(y); w = snap(w); h = snap(h); const p = PX;
+  ctx.fillStyle = borda; ctx.fillRect(x+p, y, w-2*p, h); ctx.fillRect(x, y+p, w, h-2*p);
+  ctx.fillStyle = fundo; ctx.fillRect(x+p, y+p, w-2*p, h-2*p);
+  if (luz) { ctx.fillStyle = luz; ctx.fillRect(x+2*p, y+p, w-4*p, p); ctx.fillRect(x+p, y+2*p, p, h-4*p); }
+}
+// texto pixel: tam = altura aproximada em px; contorno em quadradinhos
+function ptexto(txt, x, y, tam, cor, alinha, sombra, maxW){
+  let t = Math.max(6, Math.round(tam*0.8));
+  ctx.font = `${t}px ${FONTE}`;
+  if (maxW) { while (t > 6 && ctx.measureText(txt).width > maxW) { t--; ctx.font = `${t}px ${FONTE}`; } }
+  ctx.textAlign = alinha || "left"; ctx.textBaseline = "alphabetic";
+  const s = Math.max(1, Math.round(t/7));
+  ctx.fillStyle = sombra || "#000";
+  for (const [dx,dy] of [[-s,0],[s,0],[0,-s],[0,s],[s,s],[-s,-s],[s,-s],[-s,s],[s,2*s]]) ctx.fillText(txt, Math.round(x)+dx, Math.round(y)+dy);
+  ctx.fillStyle = cor; ctx.fillText(txt, Math.round(x), Math.round(y));
+}
+function pbarra(x, y, w, h, f, cor, fantasma){
+  x = snap(x); y = snap(y); w = snap(w); h = Math.max(PX*2, snap(h));
+  ctx.fillStyle = "#000"; ctx.fillRect(x-PX, y-PX, w+2*PX, h+2*PX);
+  ctx.fillStyle = "#3a3f58"; ctx.fillRect(x, y, w, h);
+  if (fantasma !== undefined) { ctx.fillStyle = "#ffd23f"; ctx.fillRect(x, y, snap(w*Math.max(0,Math.min(1,fantasma)))||0, h); }
+  const fw = snap(w*Math.max(0, Math.min(1, f)));
+  ctx.fillStyle = cor; ctx.fillRect(x, y, fw, h);
+  ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.fillRect(x, y, fw, PX);
+}
+const barrinha = (x, y, w, h, f, cor) => pbarra(x, y, w, h, f, cor);
+function rr(x, y, w, h){ ctx.beginPath(); ctx.rect(x, y, w, h); }
+
+/* ===== cenário ===== */
+const FOLHAS = Array.from({length:18}, () => ({ x:Math.random(), y:Math.random()*0.6, v:0.02+Math.random()*0.04, f:Math.random()*7, c:Math.random()<.5?"#7cd23a":"#4fa82a" }));
+function desenharCenario(t){
+  const cen = img("img/cenario.png");
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#2f9cf5"; ctx.fillRect(0, 0, W, H);
+  if (cen) { const fy = Math.round(CHAO - CHAO_IMG_Y*SC), fh = Math.round(IMG_H*SC);
+    ctx.drawImage(cen, Math.round((W - IMG_W*SC)/2), fy, Math.round(IMG_W*SC), fh);
+    if (fy + fh < H) { ctx.fillStyle = "#4a2f1c"; ctx.fillRect(0, fy + fh, W, H - fy - fh); } }
+  for (let i=0;i<4;i++){ const x = ((t*10*(1+i*0.3) + i*420) % (W+300)) - 150, y = H*0.06 + i*H*0.05;
+    ctx.fillStyle = "rgba(255,255,255,.8)"; const p = PX*2;
+    ctx.fillRect(snap(x), snap(y), p*10, p*2); ctx.fillRect(snap(x+p*2), snap(y-p*2), p*6, p*2); ctx.fillRect(snap(x+p*4), snap(y-p*3), p*3, p); }
+  for (const f of FOLHAS) { f.y += f.v/60; if (f.y > (CHAO/H)) { f.y = -0.05; f.x = Math.random(); }
+    ctx.fillStyle = f.c; ctx.fillRect(snap(f.x*W + Math.sin(t*1.5+f.f)*20), snap(f.y*H), PX*2, PX); }
+}
+
+/* ===== nexus: base de pedra (imagem) + cristal pixel ===== */
+const RACHA = [   // rachaduras que vão aparecendo conforme perde vida (x,y no sprite do cristal)
+  [[7,3],[7,4],[6,5],[6,6],[7,7]], [[4,8],[5,9],[5,10],[6,11]], [[10,6],[9,7],[10,8],[10,9],[9,10]], [[3,7],[4,7],[5,8]], [[8,12],[8,13],[7,14],[9,11]],
+];
+function desenharNexus(j, t){
+  const explodiu = fim && j !== fim && loop.fimT && (performance.now()/1000 - loop.fimT) > 1.1;
+  if (explodiu) {   // só sobra a base
+    const p0 = proj(NEXUS[j].x, -0.4), base = img("img/base-nexus.png"), bw = Math.round(150*SC);
+    if (base) { const bh = Math.round(bw * base.naturalHeight / base.naturalWidth); ctx.globalAlpha = 0.85; ctx.drawImage(base, Math.round(p0.x - bw/2), snap(p0.y + 10*SC) - bh, bw, bh); ctx.globalAlpha = 1; }
+    return;
+  }
+  const p0 = proj(NEXUS[j].x, -0.4), c = corDe(j), tons = TONS[j], vf = Math.max(0, nx[j].vida / CONFIG.nexusVida);
+  const hitT = simT - (nx[j].hit||-9), treme = hitT < 0.15 || (vf < 0.1 && Math.random() < 0.3) ? (Math.random()<.5?-PX:PX) : 0;
+  const x = snap(p0.x + treme), chao = snap(p0.y + 10*SC);
+  const base = img("img/base-nexus.png"), bw = Math.round(150*SC), bh = base ? Math.round(bw * base.naturalHeight / base.naturalWidth) : Math.round(50*SC);
+  if (base) { ctx.imageSmoothingEnabled = false; ctx.drawImage(base, Math.round(x - bw/2), chao - bh, bw, bh); }
+  const esc = Math.max(2, Math.round(PX*1.3)), bob = Math.round(Math.sin(t*2+j)*2)*PX, flash = hitT < 0.1;
+  // quanto mais machucado, mais escuro/apagado o cristal
+  const pal = flash ? ["#fff","#fff","#fff","#fff"] : vf > 0.5 ? [tons[0], tons[1], tons[2], tons[3]] : vf > 0.25 ? [tons[0], tons[1], tons[1], tons[2]] : ["#1a1a24", tons[0], tons[1], tons[1]];
+  const cr = sprite("cristal", CRISTAL, pal);
+  const cw = cr.width*esc, chh = cr.height*esc, cy = chao - bh*0.78 - chh - 4*PX + bob, cx = x;
+  const centroY = cy + chh/2, rx = cw*0.85, ry = chh*0.22;
+  // brilhos girando (efeito "3D": os de trás ficam atrás do cristal)
+  const orb = [];
+  const nOrb = vf > 0.25 ? 5 : 3;
+  for (let i=0;i<nOrb;i++){ const a = t*1.8 + i*Math.PI*2/nOrb; orb.push({ x: cx + Math.cos(a)*rx, y: centroY + Math.sin(a)*ry + Math.cos(a*2)*PX, prof: Math.sin(a), cor: i%2 ? "#fff" : tons[3] }); }
+  const desenhaOrb = o => { const s = o.prof > 0 ? PX*3 : PX*2; ctx.globalAlpha = o.prof > 0 ? 1 : 0.55;
+    ctx.fillStyle = o.cor; ctx.fillRect(snap(o.x)-s/2, snap(o.y)-s/2, s, s); ctx.globalAlpha = 1; };
+  orb.filter(o => o.prof <= 0).forEach(desenhaOrb);
+  // contorno de luz pulsando
+  if (vf > 0.1 || Math.floor(t*6)%2) {
+    const brilho = sprite("cristalB"+(vf>0.25?1:0), CRISTAL, Array(4).fill(vf > 0.25 ? tons[3] : "#ff9a3a"));
+    ctx.globalAlpha = 0.4 + 0.3*Math.sin(t*3);
+    for (const [dx,dy] of [[-PX,0],[PX,0],[0,-PX],[0,PX]]) desenharSprite(brilho, cx + dx, cy + dy, esc, true);
+    ctx.globalAlpha = 1;
+  }
+  desenharSprite(cr, cx, cy, esc, true);
+  // rachaduras
+  const nRacha = vf > 0.8 ? 0 : vf > 0.6 ? 1 : vf > 0.45 ? 2 : vf > 0.3 ? 3 : vf > 0.15 ? 4 : 5;
+  ctx.fillStyle = "#0a0a14";
+  for (let r=0;r<nRacha;r++) for (const [px,py] of RACHA[r]) ctx.fillRect(Math.round(cx - cw/2 + px*esc), Math.round(cy + py*esc), esc, esc);
+  // fumacinha e faíscas quando está quase quebrando
+  if (vf < 0.3 && FX.on && Math.random() < (vf < 0.15 ? 0.5 : 0.2)) FX.add({ x:NEXUS[j].x + (Math.random()-.5)*0.4, y:0, z:2.5+Math.random(), vx:(Math.random()-.5)*0.3, vy:0, vz:0.6, vida:1, t:0, cor: Math.random()<.7 ? "#3a3a44" : "#ff9a3a", tam:4, fumaca:1 });
+  orb.filter(o => o.prof > 0).forEach(desenhaOrb);
+  // barra de vida: verde → amarela → vermelha (pisca no fim)
+  const bw2 = snap(Math.max(cw*2.2, 120*SC)), by = snap(cy - 7*PX);
+  const xBar = Math.max(bw2/2 + PX*3, Math.min(W - bw2/2 - PX*3, x));
+  nx[j].vis = nx[j].vis === undefined ? nx[j].vida : nx[j].vis + (nx[j].vida - nx[j].vis) * 0.05;
+  const corBarra = vf > 0.5 ? "#3ee07a" : vf > 0.25 ? "#ffd23f" : (vf > 0.1 || Math.floor(t*8)%2) ? "#ff3b3b" : "#ff9a9a";
+  pbarra(xBar - bw2/2, by, bw2, PX*3, vf, corBarra, nx[j].vis/CONFIG.nexusVida);
+  ptexto(Math.ceil(nx[j].vida) + "", xBar, by + PX*2.9, PX*3.4, "#fff", "center");
+  ptexto(jog[j].nome, xBar, by - 2*PX, PX*5, c, "center", "#000", bw2 + PX*10);
+}
+
+/* ===== personagens ===== */
+function desenharUnidade(u, t){
+  const idade = simT - u.nasceu; if (idade < ENTRADA) return;
+  const P = CONFIG.personagens[u.j][u.p], p = proj(u.x, u.y), c = corDe(u.j);
+  const morrendo = u.vida <= 0, fade = morrendo ? Math.max(0, 1-(simT-u.morte)/0.6) : 1;
+  const nasc = Math.min(1, (idade-ENTRADA)/0.3), queda = snap((1-nasc)*(1-nasc)*160*SC);
+  const pouso = idade - ENTRADA - 0.3, squash = pouso > 0 && pouso < 0.25 ? Math.sin(pouso/0.25*Math.PI)*0.2 : 0;
+  const andando = simT - (u.andando||-9) < 0.1, fase = t*(andando ? 12 : 3) + u.id;
+  const festa = fim && u.j === fim && u.vida > 0;
+  const bob = festa ? snap(Math.abs(Math.sin(t*7 + u.id*1.7))*38*SC) : andando ? snap(Math.abs(Math.sin(fase))*6*SC) : 0;
+  const da = simT - (u.atk||-9), lunge = da < 0.18 ? snap(Math.sin(da/0.18*Math.PI)*16*SC*(EU===2?-1:1)*(u.ax||0)) : 0;
+  const ds = u.salto ? simT - u.salto.t : 9, pulo = 0;
+  if (ds < 0.15) return;                       // ainda viajando dentro da fumaça
+  const tam = Math.round(100*SC), hit = simT - (u.hit||-9) < 0.1;
+  ctx.globalAlpha = fade;
+  const sw = snap(tam*0.42*(1 - queda/400)); ctx.fillStyle = "rgba(0,0,0,.35)";
+  ctx.fillRect(snap(p.x - sw/2), snap(p.y - PX), sw, PX*2); ctx.fillRect(snap(p.x - sw/2 + PX*2), snap(p.y - PX*2), sw - PX*4, PX*4);
+  ctx.fillStyle = c; ctx.fillRect(snap(p.x - sw/2 - PX), snap(p.y + PX), sw + 2*PX, PX);
+  const pe = snap(p.y - queda - bob - pulo + (morrendo ? -(simT-u.morte)*60 : 0));
+  ctx.save(); ctx.translate(snap(p.x + lunge), pe);
+  ctx.scale(1 + squash, 1 - squash);
+  const im = img(P.foto);
+  if (im) {
+    const esc = tam / Math.max(im.naturalWidth, im.naturalHeight), dw = Math.round(im.naturalWidth*esc), dh = Math.round(im.naturalHeight*esc);
+    ctx.imageSmoothingEnabled = false;
+    const sil = silhueta(im, c), o = PX;
+    for (const [dx,dy] of [[-o,0],[o,0],[0,-o],[0,o]]) ctx.drawImage(sil, -dw/2+dx, -dh+dy, dw, dh);
+    ctx.drawImage(hit ? silhueta(im, "#ffffff") : im, -dw/2, -dh, dw, dh);
+  } else { ctx.fillStyle = c; ctx.fillRect(-tam*0.3, -tam*0.8, tam*0.6, tam*0.8); }
+  ctx.restore();
+  if (!morrendo) {
+    u.vidaVis = u.vidaVis === undefined ? u.vida : u.vidaVis + (u.vida - u.vidaVis) * 0.08;
+    const bw = snap(tam*0.62), by = snap(pe - tam - 3*PX);
+    pbarra(p.x - bw/2, by, bw, PX*2, Math.max(0,u.vida)/u.max, c, Math.max(0,u.vidaVis)/u.max);
+    // ícone da classe (quadradinho colorido ao lado da barra)
+    const cl = CLASSES[P.classe] || CLASSES.atirador;
+    ctx.fillStyle = "#000"; ctx.fillRect(snap(p.x - bw/2 - PX*5), by - PX, PX*4, PX*4);
+    ctx.fillStyle = cl.cor; ctx.fillRect(snap(p.x - bw/2 - PX*4), by, PX*2, PX*2);
+  }
+  ctx.globalAlpha = 1;
+}
+function desenharTiros(t){
+  if (fim) return;
+  for (const tr of tiros) {
+    const tipo = tr.tipo || "tiro", cor = tipo === "cura" ? "#5dff7a" : tipo === "magia" ? "#c77dff" : tr.nexus ? "#ffd23f" : corDe(tr.dono), h = 50*SC;
+    tr.rast.forEach((q, i) => { const p = proj(q.x, q.y); ctx.globalAlpha = (i+1)/tr.rast.length*0.6;
+      ctx.fillStyle = cor; const s = PX*(1 + (i > 3 ? 1 : 0) + (tipo === "magia" ? 1 : 0)); ctx.fillRect(snap(p.x)-s/2, snap(p.y - h)-s/2, s, s); });
+    ctx.globalAlpha = 1;
+    const p = proj(tr.x, tr.y), x = snap(p.x), y = snap(p.y - h);
+    if (tipo === "magia") {           // bola de energia pulsando
+      const r = PX*(3 + (Math.floor(t*12)%2));
+      ctx.fillStyle = "#5a1a8a"; ctx.fillRect(x-r-PX, y-r, 2*r+2*PX, 2*r); ctx.fillRect(x-r, y-r-PX, 2*r, 2*r+2*PX);
+      ctx.fillStyle = cor; ctx.fillRect(x-r, y-r, 2*r, 2*r); ctx.fillStyle = "#fff"; ctx.fillRect(x-PX, y-PX, PX*2, PX*2);
+    } else if (tipo === "cura") {     // cruzinha verde
+      ctx.fillStyle = "#0a4a1a"; ctx.fillRect(x-PX*3, y-PX*2, PX*6, PX*4); ctx.fillRect(x-PX*2, y-PX*3, PX*4, PX*6);
+      ctx.fillStyle = cor; ctx.fillRect(x-PX*2, y-PX, PX*4, PX*2); ctx.fillRect(x-PX, y-PX*2, PX*2, PX*4);
+    } else { const s = PX*3; ctx.fillStyle = "#fff"; ctx.fillRect(x-s/2, y-s/2, s, s); ctx.fillStyle = cor; ctx.fillRect(x-s/2-PX, y-PX/2, PX, PX); ctx.fillRect(x+s/2, y-PX/2, PX, PX); }
+  }
+}
+function desenharFumacas(){
+  for (const f of FX.fumacas) {
+    const P = CONFIG.personagens[f.j][f.p], im = img(P.foto); if (!im) continue;
+    const tam = Math.round(100*SC), esc = tam / Math.max(im.naturalWidth, im.naturalHeight), dw = Math.round(im.naturalWidth*esc), dh = Math.round(im.naturalHeight*esc);
+    const preto = silhueta(im, "#0a0a0a"), k = f.t / 0.6;
+    // lugar antigo: silhueta preta sobe, estica e some
+    const p0 = proj(f.x0, f.y0);
+    ctx.globalAlpha = Math.max(0, 1 - k*1.4); ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(preto, Math.round(p0.x - dw*(1+k*0.4)/2), Math.round(p0.y - dh*(1+k*0.2) - k*30*SC), Math.round(dw*(1+k*0.4)), Math.round(dh*(1+k*0.2)));
+    // lugar novo: aparece da fumaça (silhueta preta por cima clareando)
+    if (f.t > 0.15) { const p1 = proj(f.x, f.y), k2 = Math.min(1, (f.t - 0.15) / 0.35);
+      ctx.globalAlpha = 1 - k2; ctx.drawImage(preto, Math.round(p1.x - dw/2), Math.round(p1.y - dh), dw, dh); }
+  }
+  ctx.globalAlpha = 1;
+}
+function desenharFX(){
+  for (const a of FX.aneis) { if (a.t < 0) continue; const p = proj(a.x, a.y), f = a.t/0.5, r = snap(70*a.max*f*SC);
+    ctx.globalAlpha = 1-f; ctx.fillStyle = a.cor;
+    for (let i=0;i<16;i++){ const ang = i/16*Math.PI*2; ctx.fillRect(snap(p.x + Math.cos(ang)*r), snap(p.y - 30*SC + Math.sin(ang)*r*0.5), PX*2, PX*2); } }
+  for (const k of FX.cortes) { const p = proj(k.x, k.y), f = k.t/0.2; ctx.globalAlpha = 1 - f; ctx.fillStyle = k.cor;
+    for (let i=0;i<6;i++) ctx.fillRect(snap(p.x + (i-3)*PX*2*k.dir*(EU===2?-1:1)), snap(p.y - 60*SC - (i-3)*PX*2 + f*PX*4), PX*2, PX*2); }
+  for (const q of FX.parts) { if (q.t < 0) continue; const p = proj(q.x, q.y), f = 1 - q.t/q.vida, s = Math.max(PX, snap(q.tam*SC*1.4*(0.5+f*0.5)));
+    ctx.globalAlpha = Math.min(1, f*1.5); ctx.fillStyle = q.cor;
+    ctx.fillRect(snap(p.x), snap(p.y - q.z*40*SC), s, s); }
+  ctx.globalAlpha = 1;
+  for (const n of FX.nums) { const p = proj(n.x, n.y), f = n.t/0.9, pop = n.t < 0.12 ? 1.4 : 1;
+    ctx.globalAlpha = 1 - Math.max(0, f-0.5)*2;
+    ptexto(String(n.v), p.x, p.y - (n.nexus ? 260 : 140)*SC - snap(f*40), PX*(n.nexus?7:5.5)*pop, n.cor, "center"); }
+  for (const x of FX.textos) { const p = proj(x.x, x.y), f = x.t/0.8; ctx.globalAlpha = 1 - Math.max(0, f-0.6)*2.5;
+    ptexto(x.v, p.x, p.y - 170*SC - snap(f*20), PX*4, x.cor, "center"); }
+  ctx.globalAlpha = 1;
+}
+
+/* ===== loja + dinheiro (embaixo, em cima do penhasco do cenário) ===== */
+function cartaRect(i){
+  const ini = snap(PX*50), dir = snap(PX*8), n = 8, gap = PX*3, livre = W - ini - dir;
+  const cw = snap(Math.min(PX*62, (livre - gap*(n-1)) / n) - PX/2), ch = snap(Math.min(LOJA_H - PX*8, cw*1.45));
+  const total = n*cw + (n-1)*gap, x0 = snap(ini + Math.max(0, (livre - total)/2));
+  return { x: x0 + i*(cw+gap), y: snap(H - ch - PX*4), w: cw, h: ch };
+}
+const dinheiroPos = () => ({ x: snap(PX*25), y: snap(H - LOJA_H/2 + PX*2) });
+function proxDo(j){
+  let r = null;
+  for (let i=idxR;i<CONFIG.roteiro.length;i++){ const e=CONFIG.roteiro[i]; if(e.j===j){ r=e; break; } }
+  for (const a of agenda) if (a.j === j && (!r || a.t < r.t)) r = a;
+  return r;
+}
+const fmt$ = v => { v = Math.floor(v); return "$" + (v >= 10000 ? (v/1000).toFixed(1).replace(".0","") + "K" : v); };
+const tempoTxt = s => s >= 60 ? Math.floor(s/60) + ":" + String(Math.ceil(s)%60).padStart(2,"0") : Math.ceil(s) + "s";
+function desenharLoja(t){
+  const j = EU || 1, L = CONFIG.personagens[j], prox = proxDo(j);
+  if (CONFIG.lojaFundo === "madeira") {
+    pbox(-PX, H - LOJA_H, W + 2*PX, LOJA_H + PX, "#3b2a1e", "#120b07", "#6b4a32");
+    ctx.fillStyle = "#2a1d14"; for (let y = H - LOJA_H + PX*6; y < H; y += PX*8) ctx.fillRect(0, y, W, PX);
+  } else {
+    const g = ctx.createLinearGradient(0, H - LOJA_H, 0, H); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.4)");
+    ctx.fillStyle = g; ctx.fillRect(0, H - LOJA_H, W, LOJA_H);
+  }
+  desenharDinheiro(t, j);
+  L.forEach((P, i) => {
+    const R = cartaRect(i), lib = simT >= P.libera, usado = unid.some(u => u.j===j && u.p===i && u.vida>0);
+    const morto = Math.max(0, (voltaEm[j][i] || 0) - simT), caro = grana[j] < (P.preco||0);
+    const vooAtivo = FX.voos.find(v => v.p === i && v.j === j);
+    const destaque = prox && prox.p === i && prox.t - simT < 3 && prox.t - simT > -0.2;
+    const sobe = destaque ? -snap(PX*3 + (Math.sin(t*10) > 0 ? PX : 0)) : 0;
+    const cor = P.cor || corDe(j), ry = R.y + sobe, ih = snap(R.h*0.56), cl = CLASSES[P.classe] || CLASSES.atirador;
+    pbox(R.x, ry, R.w, R.h, lib ? "#1b1f33" : "#14151f", destaque ? (Math.sin(t*14) > 0 ? "#ffd23f" : "#fff") : lib ? cor : "#2a2d3e", null);
+    ctx.fillStyle = lib ? cor : "#2a2d3e"; ctx.fillRect(R.x + PX, ry + PX, R.w - 2*PX, ih);
+    ctx.fillStyle = "rgba(0,0,0,.18)"; for (let y = ry + PX; y < ry + ih; y += PX*4) ctx.fillRect(R.x + PX, y, R.w - 2*PX, PX*2);
+    ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.fillRect(R.x + PX, ry + PX, R.w - 2*PX, PX);
+    const im = img(P.foto);
+    if (im && !vooAtivo) {
+      const e2 = Math.min((R.w - PX*6)/im.naturalWidth, (ih - PX*3)/im.naturalHeight), dw = Math.round(im.naturalWidth*e2), dh = Math.round(im.naturalHeight*e2);
+      ctx.imageSmoothingEnabled = false;
+      if (!lib || usado) ctx.globalAlpha = 0.35;
+      ctx.drawImage(im, snap(R.x + (R.w-dw)/2), ry + PX + ih - dh, dw, dh);
+      ctx.globalAlpha = 1;
+    }
+    if (!lib) ptexto("?", R.x + R.w/2, ry + ih/2 + PX*4, PX*9, "#6a6f8a", "center");
+    ctx.fillStyle = "#000"; ctx.fillRect(R.x + PX, ry + PX + ih, R.w - 2*PX, PX);
+    // 3 linhas bem separadas: nome / classe / preço
+    const area = R.h - ih - PX*2, l1 = ry + ih + PX*2 + area*0.30, l2 = ry + ih + PX*2 + area*0.58, l3 = ry + R.h - PX*3;
+    ptexto(P.nome, R.x + R.w/2, l1, PX*4.2, lib ? "#fff" : "#6a6f8a", "center", "#000", R.w - PX*4);
+    ptexto(cl.nome, R.x + R.w/2, l2, PX*3.4, lib ? cl.cor : "#4a4f6a", "center", "#000", R.w - PX*4);
+    if (!lib) ptexto("em " + tempoTxt(P.libera-simT), R.x + R.w/2, l3, PX*3.4, "#8a8fa8", "center");
+    else ptexto(fmt$(P.preco||0), R.x + R.w/2, l3, PX*5.6, caro ? "#8a8fa8" : "#5dff7a", "center", "#000", R.w - PX*4);
+    if (morto > 0) {
+      ctx.fillStyle = "rgba(10,10,20,.82)"; ctx.fillRect(R.x + PX, ry + PX, R.w - 2*PX, ih);
+      ptexto(tempoTxt(morto), R.x + R.w/2, ry + ih/2 + PX*3, PX*6, "#fff", "center");
+      pbarra(R.x + PX*3, ry + ih - PX*4, R.w - PX*6, PX*2, morto / CONFIG.cooldownMorte, "#ff5a5a");
+    } else if (usado) ptexto("EM CAMPO", R.x + R.w/2, ry + ih - PX*2, PX*3, "#fff", "center", "#000", R.w - PX*4);
+    pbox(R.x + PX*2, ry + PX*2, PX*8, PX*8, "#000", "#000"); ptexto(String(i+1), R.x + PX*6, ry + PX*8, PX*4, "#5cc8ff", "center", "#000");
+    if (destaque) {
+      const falta = prox.t - simT, lbl = falta < 0.8 ? "ENTER" : String(i+1), lw = falta < 0.8 ? PX*28 : PX*10;
+      pbox(R.x + R.w/2 - lw/2, ry - PX*12, lw, PX*10, "#ffd23f", "#000", "#fff3a8");
+      ptexto(lbl, R.x + R.w/2, ry - PX*4.5, PX*4, "#3b2a00", "center", "#ffd23f");
+    }
+  });
+  const cd = Math.max(0, cdFim[j]-simT);
+  if (cd > 0) pbarra(cartaRect(0).x, H - PX*2, cartaRect(7).x + cartaRect(7).w - cartaRect(0).x, PX, cd / CONFIG.cooldown, "#ffd23f");
+  desenharVoos(t);
+}
+function desenharDinheiro(t, j){
+  const d = dinheiroPos();
+  desenharDinheiro.vis = desenharDinheiro.vis === undefined ? grana[j] : desenharDinheiro.vis + (grana[j] - desenharDinheiro.vis) * 0.15;
+  const ult = FX.gastos[FX.gastos.length-1], pulo = ult ? Math.max(0, 1 - ult.t*3) : 0;
+  pbox(d.x - PX*22, d.y - PX*18, PX*44, PX*36, "#10141f", pulo > 0 ? "#ff5a5a" : "#1f7a3a", "#2a3a2e");
+  const fr = MOEDA[[0,1,2,1][Math.floor(t*6) % 4]];
+  desenharSprite(sprite("moeda"+fr.join(), fr, PAL_MOEDA), d.x, d.y - PX*15, PX*2, true);
+  ptexto(fmt$(desenharDinheiro.vis), d.x, d.y + PX*12, PX*6.5*(1 + pulo*0.25), pulo > 0 ? "#ff8080" : "#5dff7a", "center", "#000", PX*40);
+  for (const g of FX.gastos) { const f = g.t/1.2; ctx.globalAlpha = 1 - f;
+    ptexto("-" + fmt$(g.v), d.x, d.y - PX*22 - snap(f*PX*14), PX*5, "#ff5a5a", "center"); }
+  ctx.globalAlpha = 1;
+}
+function desenharVoos(t){
+  const d = dinheiroPos();
+  for (const m of FX.moedas) { if (m.t < 0) continue;
+    const R = cartaRect(m.p), f = Math.min(1, m.t/0.45), e = f*f*(3-2*f);
+    const x = d.x + (R.x+R.w/2 - d.x)*e, y = d.y + (R.y+R.h-PX*8 - d.y)*e - Math.sin(f*Math.PI)*(PX*30 + m.s*PX*14);
+    ctx.globalAlpha = 1 - Math.max(0, f-0.8)*5;
+    const fr = MOEDA[Math.floor((t*10 + m.s*3)) % 3];
+    desenharSprite(sprite("moeda"+fr.join(), fr, PAL_MOEDA), x, y, PX, true); }
+  ctx.globalAlpha = 1;
+  for (const v of FX.voos) {
+    const P = CONFIG.personagens[v.j][v.p], im = img(P.foto), R = cartaRect(v.p), alvo = proj(v.x, v.y);
+    const f = Math.min(1, v.t/ENTRADA), e = 1 - Math.pow(1-f, 3);
+    const x = R.x+R.w/2 + (alvo.x - (R.x+R.w/2))*e, y = R.y+R.h/2 + (alvo.y - 200*SC - (R.y+R.h/2))*e - Math.sin(f*Math.PI)*PX*40;
+    const tw = snap(R.w*(1 - e*0.25)), th = snap(tw*1.2);
+    for (let i=1;i<5;i++){ ctx.globalAlpha = 0.5 - i*0.1; ctx.fillStyle = P.cor || corDe(v.j);
+      ctx.fillRect(snap(x - (alvo.x - R.x)*0.04*i), snap(y + PX*6*i), PX*3, PX*3); }
+    ctx.globalAlpha = 1;
+    pbox(x - tw/2, y - th/2, tw, th, P.cor || corDe(v.j), "#fff", "rgba(255,255,255,.4)");
+    if (im) { const s2 = Math.min((tw-PX*4)/im.naturalWidth, (th-PX*4)/im.naturalHeight); ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(im, Math.round(x - im.naturalWidth*s2/2), Math.round(y - im.naturalHeight*s2/2), Math.round(im.naturalWidth*s2), Math.round(im.naturalHeight*s2)); }
+  }
+}
+
+/* ===== textos das câmeras (pequenos, sem fundo) ===== */
+/* ===== textos das câmeras: cada aviso fica fixo até a contagem dele acabar ===== */
+const seg = v => Math.max(0, Math.ceil(v - 1e-6));
+function candidatosCam(j){
+  const L = [], venc = CONFIG.vencedor, falta = CONFIG.duracao - simT;
+  if (venc && falta <= 15) L.push({ chave:"final", ate: CONFIG.duracao, prio: 9,
+    txt: () => j === venc ? `🏆 VOCÊ VAI VENCER EM ${seg(CONFIG.duracao - simT)}s!` : `💀 SEU NEXUS CAI EM ${seg(CONFIG.duracao - simT)}s!` });
+  if (msgs[j] && simT < msgs[j].ate) { const m = msgs[j]; L.push({ chave:"msg"+m.ate, ate: m.ate, prio: 5, txt: () => "💬 " + m.texto }); }
+  const e = proxDo(j);
+  if (e) {
+    if (e.tipo === "msg") L.push({ chave:"rm"+e.t, ate: e.t, prio: 3, txt: () => `em ${seg(e.t - simT)}s: ${e.texto}` });
+    else { const P = CONFIG.personagens[j][e.p];
+      if (e.auto && simT < e.avisoDe) L.push({ chave:"morto"+e.p+e.avisoDe, ate: e.avisoDe, prio: 3, txt: () => `${P.nome} morreu, volta em ${seg(e.avisoDe - simT)}s` });
+      else if (e.auto) L.push({ chave:"rec"+e.p+e.t, ate: e.t, prio: 4, txt: () => `⚠️ vai recolocar ${P.nome} em ${seg(e.t - simT)}s (${fmt$(P.preco||0)})` });
+      else L.push({ chave:"cp"+e.t+e.p, ate: e.t, prio: 3, txt: () => `em ${seg(e.t - simT)}s: compra ${P.nome} (${fmt$(P.preco||0)})` }); }
+  }
+  if (venc && j !== venc && nx[j].vida / CONFIG.nexusVida < 0.3 && falta > 15) L.push({ chave:"quase", ate: simT + 4, prio: 2, txt: () => "⚠️ seu nexus tá quase caindo!" });
+  if (venc && falta > 15) { const ag = empurrao(simT) * (j === venc ? 1 : -1);
+    L.push({ chave:"estado"+Math.round(ag), ate: simT + 4, prio: 1, txt: () => ag >= 0.5 ? "⚔️ seu time tá atacando o nexus dele" : ag <= -0.5 ? "🛡️ eles estão no seu nexus!" : "⚖️ briga no meio" }); }
+  return L.sort((a, b) => b.prio - a.prio || a.ate - b.ate);
+}
+function proximaVirada(j){
+  const venc = CONFIG.vencedor; if (!venc || CONFIG.duracao - simT <= 15) return null;
+  const sinal = j === venc ? 1 : -1, ag = empurrao(simT) * sinal;
+  for (let tt = Math.ceil(simT * 4) / 4 + 0.25; tt < Math.min(CONFIG.duracao, simT + 60); tt += 0.25) { const e2 = empurrao(tt) * sinal;
+    if (ag < 0.5 && e2 >= 0.5) return { ate: tt, txt: () => `depois → em ${seg(tt - simT)}s: seu time avança até o nexus dele` };
+    if (ag > -0.5 && e2 <= -0.5) return { ate: tt, txt: () => `depois → em ${seg(tt - simT)}s: eles avançam até o seu nexus` }; }
+  return null;
+}
+function camTexto(el, j){
+  const span = el.querySelector("span"), em = el.querySelector("em"), bar = el.querySelector("i");
+  if (fim) { span.textContent = fim === j ? "🏆 VOCÊ VENCEU! comemora" : "💀 você perdeu, reage"; em.textContent = ""; bar.style.width = "0"; return; }
+  camTexto.c = camTexto.c || {};
+  const cur = camTexto.c[j];
+  const cands = candidatosCam(j), top = cands[0];
+  // troca só quando o atual terminou (ou se chegou algo mais importante, tipo a contagem final)
+  if (!cur || simT >= cur.ate + 0.6 || simT < cur.ini - 1 || (top && top.prio >= 9 && cur.chave !== top.chave)) camTexto.c[j] = top ? { ...top, ini: simT, tam: Math.max(1, top.ate - simT) } : null;
+  const at = camTexto.c[j];
+  span.textContent = at ? at.txt() : "só assistir";
+  // linha "depois": também fica fixa até acontecer
+  camTexto.d = camTexto.d || {};
+  const dcur = camTexto.d[j];
+  if (!dcur || simT >= dcur.ate + 0.5 || simT < dcur.ini - 1) { const nv = proximaVirada(j); camTexto.d[j] = nv ? { ...nv, ini: simT } : null; }
+  em.textContent = camTexto.d[j] ? camTexto.d[j].txt() : "";
+  // barrinha: enche até o fim do aviso atual
+  const f = at ? Math.min(1, Math.max(0, 1 - (at.ate - simT) / Math.min(10, at.tam))) : 0;
+  bar.style.width = (f*100) + "%"; bar.style.background = at && at.ate - simT < 3 ? "#ff6a3d" : "#ffe25b";
+}
+
+btnVoltar.onclick = () => {
+  // limpa o jogo e o meu lugar; o outro continua na tela final até ele mesmo voltar
+  if (EU) { NX.naoSair("j"+EU); NX.set("j"+EU, null); }
+  NX.set("inicio", null); NX.set("fim", null);
+  try { sessionStorage.removeItem("nexus_eu"); } catch (e) {}
+  location.reload();
+};
+
+/* ===== FIM: nexus explode em pixel art + VENCEU letra por letra ===== */
+const easeOut = k => 1 - Math.pow(1 - k, 3);
+let PEDACOS = [];
+function desenharExplosao(j, ft, t){
+  const np = proj(NEXUS[j].x, -0.4), cx = np.x, cy = np.y - 95*SC, tons = TONS[j];
+  if (ft < 1.1) {           // carregando: brilho piscando cada vez mais rápido
+    const pisca = Math.floor(ft * (6 + ft*20)) % 2;
+    if (pisca) { ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(snap(cx - 24*SC), snap(cy - 40*SC), snap(48*SC), snap(70*SC)); }
+    for (let i=0;i<6;i++){ const a = i/6*Math.PI*2 + ft*4, r = (1.1 - ft) * 120*SC;
+      ctx.fillStyle = i%2 ? "#fff" : tons[3]; ctx.fillRect(snap(cx + Math.cos(a)*r), snap(cy + Math.sin(a)*r*0.6), PX*2, PX*2); }
+    PEDACOS = [];
+    return;
+  }
+  const e = ft - 1.1;
+  if (!PEDACOS.length) {    // cria os pedaços do cristal
+    for (let i=0;i<70;i++){ const a = Math.random()*Math.PI*2, v = 120 + Math.random()*420;
+      PEDACOS.push({ x:0, y:0, vx:Math.cos(a)*v*SC, vy:(Math.sin(a)*v - 200)*SC, s: PX*(1 + Math.floor(Math.random()*3)), cor: [tons[0],tons[1],tons[2],tons[3],"#fff"][i%5], gira: Math.random() }); }
+  }
+  // clarão branco em quadrados
+  if (e < 0.35) { const r = snap((40 + e*900)*SC); ctx.fillStyle = `rgba(255,255,255,${1 - e/0.35})`;
+    for (let yy = -r; yy <= r; yy += PX*4) { const w = Math.sqrt(Math.max(0, r*r - yy*yy)); ctx.fillRect(snap(cx - w), snap(cy + yy), snap(w*2), PX*4); } }
+  // anéis de choque pixelados
+  for (let k=0;k<3;k++){ const ee = e - k*0.12; if (ee < 0 || ee > 0.9) continue; const r = (30 + ee*520)*SC;
+    ctx.globalAlpha = 1 - ee/0.9; ctx.fillStyle = k===1 ? tons[2] : "#ffd23f";
+    for (let i=0;i<36;i++){ const a = i/36*Math.PI*2; ctx.fillRect(snap(cx + Math.cos(a)*r), snap(cy + Math.sin(a)*r*0.55), PX*3, PX*3); } }
+  ctx.globalAlpha = 1;
+  // pedaços voando com gravidade
+  for (const p of PEDACOS) { const x = cx + p.vx*e, y = cy + p.vy*e + 520*SC*e*e;
+    if (y > np.y + 30*SC) continue; ctx.fillStyle = p.cor; ctx.fillRect(snap(x), snap(y), p.s, p.s); }
+  // fumaça subindo
+  for (let i=0;i<14;i++){ const ee = e - i*0.05; if (ee < 0) continue; const a = i*2.4, r = (20 + ee*60)*SC;
+    ctx.globalAlpha = Math.max(0, 0.7 - ee*0.35); ctx.fillStyle = i%2 ? "#2a2a33" : "#45454f";
+    const s = snap((10 + ee*30)*SC); ctx.fillRect(snap(cx + Math.cos(a)*r), snap(cy - ee*90*SC + Math.sin(a)*r*0.4), s, s); }
+  ctx.globalAlpha = 1;
+}
+function desenharVitoria(v, ft, t){
+  if (ft < 2.2) return;
+  const e = ft - 2.2, cor = corDe(v), dados = jog[v];
+  // escurece em faixas de pixel
+  const esc = Math.min(1, e*2);
+  ctx.fillStyle = `rgba(5,8,20,${0.72*esc})`; ctx.fillRect(0, 0, W, H);
+  for (let y = 0; y < H; y += PX*4) { ctx.fillStyle = `rgba(0,0,0,${0.15*esc})`; ctx.fillRect(0, y, W, PX); }
+  // raios girando atrás
+  for (let i=0;i<14;i++){ const a = e*0.5 + i*Math.PI/7; ctx.fillStyle = cor + "55";
+    for (let r = PX*40; r < Math.max(W,H); r += PX*7) ctx.fillRect(snap(W/2 + Math.cos(a)*r), snap(H*0.4 + Math.sin(a)*r), PX*3, PX*3); }
+  // foto do vencedor caindo com quique
+  const f1 = Math.min(1, e/0.6), quique = f1 < 1 ? (1 - easeOut(f1)) * -H*0.5 : Math.sin(Math.min(1,(e-0.6)/0.3)*Math.PI)*-PX*6;
+  const tam = snap(Math.min(H*0.3, PX*70)), fx = W/2, fy = H*0.36 + quique;
+  pbox(fx - tam/2 - PX*4, fy - tam/2 - PX*4, tam + PX*8, tam + PX*8, "#000", cor, "#fff");
+  const foto = img(dados.foto);
+  if (foto) { ctx.imageSmoothingEnabled = false; ctx.drawImage(foto, snap(fx - tam/2), snap(fy - tam/2), tam, tam); }
+  else { ctx.fillStyle = cor; ctx.fillRect(snap(fx - tam/2), snap(fy - tam/2), tam, tam); }
+  // coroa pixel em cima
+  if (e > 0.7) { const cw = PX*24, cy2 = fy - tam/2 - PX*14 - Math.abs(Math.sin(t*3))*PX*2;
+    ctx.fillStyle = "#ffd23f"; ctx.fillRect(snap(fx - cw/2), snap(cy2 + PX*6), cw, PX*6);
+    for (const dx of [-cw/2, -PX*2, cw/2 - PX*4]) ctx.fillRect(snap(fx + dx), snap(cy2), PX*4, PX*6);
+    ctx.fillStyle = "#ff4f6d"; ctx.fillRect(snap(fx - PX), snap(cy2 + PX*7), PX*2, PX*2); }
+  // nome
+  if (e > 0.6) { const k = Math.min(1, (e - 0.6)/0.3); ctx.globalAlpha = k;
+    ptexto(dados.nome, W/2, fy + tam/2 + PX*18, PX*11, "#fff", "center", "#000", W*0.8); ctx.globalAlpha = 1; }
+  // VENCEU! letra por letra caindo grande e assentando
+  const palavra = "VENCEU!", tamL = Math.min(PX*22, W/12), y0 = fy + tam/2 + PX*44;
+  ctx.font = `${Math.round(tamL)}px ${FONTE}`; const larg = ctx.measureText(palavra).width;
+  let x = W/2 - larg/2;
+  [...palavra].forEach((ch, i) => {
+    const w = ctx.measureText(ch).width, ti = e - 1.0 - i*0.18;
+    if (ti > 0) {
+      const k = Math.min(1, ti/0.25), escala = 1 + (1 - easeOut(k))*2.5, sobe = (1 - easeOut(k)) * -PX*30;
+      const onda = Math.sin(t*5 + i*0.6) * PX*2 * (ti > 0.4 ? 1 : 0);
+      ctx.save(); ctx.translate(Math.round(x + w/2), Math.round(y0 + sobe + onda)); ctx.scale(escala, escala);
+      ptexto(ch, 0, 0, tamL/0.8, ti < 0.08 ? "#fff" : ["#ffd23f","#ffe14d","#ffd23f"][i%3], "center", "#000");
+      ctx.restore();
+      if (ti < 0.1) { ctx.fillStyle = "#fff"; for (let q=0;q<6;q++) ctx.fillRect(snap(x + w/2 + (Math.random()-.5)*w*2), snap(y0 - tamL/2 + (Math.random()-.5)*tamL*1.5), PX*2, PX*2); }
+    }
+    x += w;
+  });
+  // confete pixel
+  if (e > 1.0) { if (!desenharVitoria.conf) desenharVitoria.conf = Array.from({length:140}, () => ({ x:Math.random(), y:-Math.random(), v:0.1+Math.random()*0.25, c:["#2fa8ff","#ff4f6d","#ffd23f","#5dff7a","#fff","#c77dff"][Math.floor(Math.random()*6)] }));
+    for (const c of desenharVitoria.conf) { c.y += c.v/60; if (c.y > 1.05) c.y = -0.05;
+      ctx.fillStyle = c.c; ctx.fillRect(snap(c.x*W + Math.sin(t*2 + c.x*20)*10), snap(c.y*H), PX*2, PX*(Math.floor(t*6 + c.x*10)%2 ? 3 : 1)); } }
+  else desenharVitoria.conf = null;
+}
+
+/* ===== loop ===== */
+function loop(){
+  const t = performance.now()/1000;
+  if (!window.ESPECTADOR && lobby.style.display !== "none" && Math.floor(t*2) !== loop.ult) { loop.ult = Math.floor(t*2); atualizaEspera(); }
+  if (inicio && EU && !fim) {
+    const alvo = (Date.now() - inicio)/1000 * (CONFIG.acelerar || 1);
+    if (alvo < simT - 0.5) novaPartida();
+    const falta = Math.floor((alvo - simT) / DT);
+    FX.on = falta < 6;              // pulando no tempo -> sem efeitos
+    let n = 0; while (simT + DT <= alvo && n++ < 900) passo();
+    FX.on = true;
+  }
+  const agora = performance.now()/1000, dtv = Math.min(0.05, agora - (loop.tv || agora)); loop.tv = agora;
+  FX.passo(dtv);
+  if (fim) { loop.fimT = loop.fimT || agora; } else loop.fimT = 0;
+  const ft = fim ? agora - loop.fimT : 0, perd = fim === 1 ? 2 : 1;
+  ctx.save();
+  if (fim) {   // zoom no nexus que vai explodir
+    const z = 1 + 1.1 * easeOut(Math.min(1, ft / 1.1)), np = proj(NEXUS[perd].x, -0.4), foco = { x: np.x, y: np.y - 90*SC };
+    const k = easeOut(Math.min(1, ft/1.1)), zz = 1 + (z-1);
+    // não deixa o zoom mostrar fora da imagem do cenário
+    const tx = Math.min(0, Math.max(W - W*zz, W/2 - foco.x*zz)), ty = Math.min(0, Math.max(H - H*zz, H*0.52 - foco.y*zz));
+    ctx.translate(tx, ty); ctx.scale(zz, zz);
+    if (ft > 1.1 && ft < 3.2) { const tr = (3.2 - ft) * 6; ctx.translate(snap((Math.random()-.5)*tr), snap((Math.random()-.5)*tr)); }
+  }
+  if (FX.shake > 0.6) ctx.translate(snap((Math.random()-.5)*FX.shake), snap((Math.random()-.5)*FX.shake));
+  desenharCenario(t);
+  const ordem = EU === 2 ? [1,2] : [2,1];
+  desenharNexus(1, t); desenharNexus(2, t);
+  [...unid].sort((a,b) => a.y - b.y).forEach(u => desenharUnidade(u, t));
+  desenharTiros(t);
+  desenharFumacas();
+  desenharFX();
+  if (fim) desenharExplosao(perd, ft, t);
+  ctx.restore();
+  document.body.classList.toggle("jogando", lobby.style.display === "none");
+  if (EU && !fim) desenharLoja(t);
+  camA.classList.toggle("direita", EU === 2);       // J1 lê na esquerda, J2 na direita
+  if (fim) camA.style.display = "none"; else camA.style.display = "";
+  if (FX.flashTela > 0) { ctx.fillStyle = `rgba(255,255,255,${FX.flashTela})`; ctx.fillRect(0,0,W,H); }
+  if (fim) desenharVitoria(fim, ft, t);
+  btnVoltar.style.display = fim && ft > 4.5 && !window.ESPECTADOR ? "block" : "none";
+  if (EU) { camTexto(camA, EU); camB.style.display = "none"; }   // cada youtuber só vê o que ELE vai fazer
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ===== teclado (durante o jogo) ===== */
+addEventListener("keydown", e => {
+  if (lobby.style.display !== "none") return;
+  const k = e.key.toLowerCase();
+  if (k === "r") NX.set("inicio", Date.now() + 3500);                 // reinicia a partida pros dois
+  if (k === "l") { NX.set("inicio", null); NX.set("j1", null); NX.set("j2", null); location.reload(); } // volta pro lobby
+});
+</script>
+</body>
+</html>
