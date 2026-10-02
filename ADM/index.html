@@ -87,7 +87,7 @@
 </head>
 <body>
 <header>
-  <h1>⚙️ ADM · Batalha dos YOUTUBERS <small style="font-size:11px;opacity:.6">v17</small></h1>
+  <h1>⚙️ ADM · Batalha dos YOUTUBERS <small style="font-size:11px;opacity:.6">v21</small></h1>
   <div class="relogio" id="relogio">--</div>
   <span class="estado" id="estado">carregando…</span>
   <label class="linha" style="gap:6px;font-size:12px;color:var(--mu)">Sala <input id="sala" style="width:110px"></label>
@@ -179,7 +179,8 @@
         <label class="campo"><b>⚔️ Dano quando é forte (x)</b><input type="number" id="forte" step="0.1"></label>
         <label class="campo"><b>⚔️ Dano quando é fraco (x)</b><input type="number" id="fraco" step="0.1"></label>
         <label class="campo"><b>👥 Máx. em campo por lado</b><input type="number" id="maxEmCampo" min="1"><small>quantos personagens cada time pode ter ao mesmo tempo</small></label>
-        <label class="campo"><b>👥 Máx. em campo no final</b><input type="number" id="maxFinal" min="1"><small>vale no último 1:30 da partida</small></label>
+        <label class="campo"><b>👥 Máx. em campo no final</b><input type="number" id="maxFinal" min="1"><small>só vale nos segundos finais (abaixo)</small></label>
+        <label class="campo"><b>⏱ Segundos finais com 4</b><input type="number" id="finalSegundos" min="0"><small>quantos segundos antes do nexus cair libera o máximo do final</small></label>
         <label class="campo"><b>⚡ Acelerar (debug)</b><input type="number" id="acelerar" step="1" min="1"><small>1 = normal · 8 = partida de 8 min em 1 min</small></label>
         <label class="campo"><b>🏆 Quem ganha</b><select id="vencedor"><option value="1">Jogador 1</option><option value="2">Jogador 2</option><option value="0">Ninguém (batalha decide)</option></select><small>o nexus do perdedor vai caindo aos poucos até o fim</small></label>
         <label class="campo"><b>⏱ Duração até o nexus cair (s)</b><input type="number" id="duracao"><small>480 = 8:00</small></label>
@@ -275,7 +276,7 @@ function renderClasses(){
       <p>🔵 ${quem(1)}<br>🔴 ${quem(2)}</p></div>`;
   }).join("");
 }
-const CAMPOS = ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo"];
+const CAMPOS = ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","finalSegundos","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo"];
 let C = null;
 async function carregar(salva){
   const pad = await pegarPadrao();

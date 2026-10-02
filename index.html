@@ -94,7 +94,7 @@
   <h1>BATALHA DOS YOUTUBERS</h1>
   <div id="slots"></div>
   <div id="msgLobby"></div>
-  <div style="position:absolute;bottom:8px;right:12px;font-size:12px;opacity:.7;text-shadow:2px 2px 0 #0d2b0f">v17</div>
+  <div style="position:absolute;bottom:8px;right:12px;font-size:12px;opacity:.7;text-shadow:2px 2px 0 #0d2b0f">v21</div>
   <!-- compatibilidade com o código antigo -->
   <div id="form" style="display:none"></div><div id="espera" style="display:none"></div><button id="btnPronto" style="display:none"></button>
   <div id="modal"><div class="card px">
@@ -116,14 +116,17 @@ const sala = new URLSearchParams(location.search).get("sala") || "principal";
 let api;
 if (firebaseConfig) {
   const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-  const { getDatabase, ref, set, update, onValue, onDisconnect } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+  const { getDatabase, ref, set, update, onValue, onDisconnect, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
   const db = getDatabase(initializeApp(firebaseConfig));
   const r = p => ref(db, "nexus/" + sala + (p ? "/" + p : ""));
+  var offsetServ = 0; onValue(ref(db, ".info/serverTimeOffset"), s => offsetServ = s.val() || 0);
   api = {
     ouvir: cb => onValue(r(), s => cb(s.val() || {})),
     set: (p, v) => set(r(p), v),
-    aoSair: p => { const o = onDisconnect(r(p)); o.cancel().then(() => o.remove()); },   // fechou a aba/caiu → apaga do firebase
-    naoSair: p => onDisconnect(r(p)).cancel(),
+    // fechou a aba/caiu → o servidor anota a hora que saiu (quem está no lobby apaga 6s depois)
+    aoSair: p => { const o = onDisconnect(r("saiu_" + p)); o.cancel().then(() => o.set(serverTimestamp())); set(r("saiu_" + p), null); },
+    naoSair: p => { onDisconnect(r("saiu_" + p)).cancel(); },
+    agora: () => Date.now() + offsetServ,
   };
 } else {
   const K = "nexus_" + sala, bc = new BroadcastChannel(K);
@@ -134,7 +137,8 @@ if (firebaseConfig) {
   api = {
     ouvir: cb => { cbs.push(cb); cb(ler()); },
     set: (p, v) => { const d = ler(); if (v === null) delete d[p]; else d[p] = v; localStorage.setItem(K, JSON.stringify(d)); bc.postMessage(1); cbs.forEach(cb => cb(d)); },
-    aoSair: () => {}, naoSair: () => {},
+    aoSair: p => { api.set("saiu_" + p, null); addEventListener("pagehide", () => api.set("saiu_" + p, Date.now())); },
+    naoSair: () => {}, agora: () => Date.now(),
   };
 }
 window.NX = api;
@@ -146,17 +150,18 @@ window.dispatchEvent(new Event("nx-pronto"));
    CONFIGURAÇÃO — personagens (placeholders) e ROTEIRO
    ===================================================================== */
 const CONFIG = {
-  versao: 17,               // muda quando o padrão muda: config velha salva no ADM é ignorada
+  versao: 21,               // muda quando o padrão muda: config velha salva no ADM é ignorada
   nexusVida: 5000,
   cooldown: 5,             // segundos entre compras (só visual, o roteiro manda)
   cooldownMorte: 10,       // quando um personagem morre, fica esse tempo sem poder ser colocado de novo
   ritmo: 1.4,
   autoRecolocar: true,     // quando acaba o cooldown de morte, o youtuber recoloca o personagem sozinho
-  avisoRecolocar: 4,       // segundos de aviso antes de recolocar (aparece na câmera)
+  avisoRecolocar: 5,       // segundos de aviso antes de recolocar (aparece na câmera)
   vencedor: 1,             // quem ganha no roteiro (1 ou 2). 0 = deixa a batalha decidir
   duracao: 480,            // segundos até o nexus do perdedor cair (480 = 8:00)
   acelerar: 1,             // debug: 8 = partida inteira em 1 minuto
-  maxFinal: 4,             // no último minuto e meio pode ter um pouco mais
+  maxFinal: 4,             // só nos últimos segundos antes do nexus cair
+  finalSegundos: 20,       // quantos segundos antes do fim libera o "maxFinal"
   maxEmCampo: 3,           // no máximo X personagens de cada lado ao mesmo tempo
   lojaFundo: "penhasco",   // fundo da loja: "madeira" (painel marrom) ou "penhasco" (mostra o penhasco da imagem)
   dinheiroInicial: 3,      // $ no começo
@@ -226,7 +231,7 @@ let configAplicada = "";
 function aplicarConfig(c){
   if (!c || c.versao !== CONFIG.versao) return;     // config salva de uma versão antiga: ignora
   const s = JSON.stringify(c); if (s === configAplicada) return; configAplicada = s;
-  for (const k of ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo"]) if (c[k] !== undefined) CONFIG[k] = c[k];
+  for (const k of ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","finalSegundos","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo"]) if (c[k] !== undefined) CONFIG[k] = c[k];
   if (c.personagens) [1,2].forEach(j => { if (c.personagens[j]) CONFIG.personagens[j] = c.personagens[j]; });
   if (c.roteiro) CONFIG.roteiro = [...c.roteiro].sort((a,b) => a.t - b.t);
 }
@@ -283,7 +288,12 @@ addEventListener("orientationchange", () => setTimeout(reajusta, 300));
 document.addEventListener("gesturestart", e => e.preventDefault());   // sem zoom de pinça no iPhone
 
 /* sair da tela do jogo → apaga a pessoa (o lugar dela fica vazio) */
-addEventListener("pagehide", () => { if (EU && !window.ESPECTADOR) { NX.set("j"+EU, null); NX.set("inicio", null); } });
+// limpeza: quem saiu do site há mais de 6s some do lobby (só no lobby — durante a partida ninguém é apagado)
+setInterval(() => {
+  if (!dados || dados.inicio || window.ESPECTADOR) return;
+  for (const j of [1,2]) { const saiu = dados["saiu_j"+j];
+    if (dados["j"+j] && saiu && NX.agora() - saiu > 6000) { NX.set("j"+j, null); NX.set("saiu_j"+j, null); } }
+}, 1000);
 
 /* ===== lobby: 2 espaços (Jogador 1 e Jogador 2) ===== */
 let fotoData = "", slotEditando = 0;
@@ -417,20 +427,33 @@ function calcPressao(){
 }
 let idxV = 0;
 // compra o melhor personagem que dá pra comprar agora (é o "reforço" que faz o time avançar)
-function comprarReforco(j){
-  const L = CONFIG.personagens[j]; let melhor = -1;
-  L.forEach((P, i) => { if (simT >= P.libera && grana[j] >= (P.preco||0) && (voltaEm[j][i]||0) <= simT && !unid.some(u => u.j===j && u.p===i && u.vida>0) && (melhor < 0 || (P.preco||0) > (L[melhor].preco||0))) melhor = i; });
-  if (melhor >= 0) { adicionar({ t:simT, j, p:melhor, reforco:true }); msgs[j] = { texto: "reforço! seu time vai avançar", ate: simT + 3 }; }
+// escolhe o melhor pra comprar: o mais caro que dá pra pagar, evitando repetir os mesmos
+function melhorParaComprar(j, quando){
+  const L = CONFIG.personagens[j]; let melhor = -1, nota = -1;
+  usados[j] = usados[j] || {};
+  L.forEach((P, i) => {
+    if (simT < P.libera - 0.01 || (voltaEm[j][i]||0) > quando || unid.some(u => u.j===j && u.p===i && u.vida>0) || agenda.some(a => a.j===j && a.p===i)) return;
+    const preco = P.preco || 0, paga = grana[j] >= preco;
+    const n = (paga ? 100000 : 0) + preco * (1 - 0.35 * Math.min(2, usados[j][i] || 0) / 2);
+    if (n > nota) { nota = n; melhor = i; }
+  });
+  if (melhor >= 0) usados[j][melhor] = (usados[j][melhor] || 0) + 1;
+  return melhor;
+}
+function comprarReforco(j, quando){
+  const melhor = melhorParaComprar(j, quando);
+  if (melhor >= 0) agendar(j, { p: melhor, reforco: true }, quando);
 }
 const pressao = (qual, t) => { if (!PRESS) calcPressao(); const i = Math.min(PRESS[qual].length - 1, Math.max(0, Math.floor(t / PRESS.passo))); return PRESS[qual][i]; };
 
 /* ===== simulação determinística (igual nos dois PCs) ===== */
 const DT = 1/30;
-let simT, unid, tiros, nx, idxR, msgs, fim, prox_id, cdFim, voltaEm, fila, agenda, grana;
+let usados = {1:{},2:{}};
+let simT, unid, tiros, nx, idxR, idxM, msgs, fim, prox_id, cdFim, voltaEm, fila, agenda, grana, livre;
 function novaPartida(){
   try { FX.limpar(); } catch (e) {}
   PRESS = null; idxV = 0;
-  simT = 0; unid = []; tiros = []; idxR = 0; msgs = {1:null,2:null}; fim = 0; prox_id = 1;
+  simT = 0; unid = []; tiros = []; idxR = 0; idxM = 0; msgs = {1:null,2:null}; fim = 0; prox_id = 1; livre = {1:0, 2:0}; usados = {1:{},2:{}};
   nx = { 1:{vida:CONFIG.nexusVida, cd:0, hit:0}, 2:{vida:CONFIG.nexusVida, cd:0, hit:0} };
   cdFim = {1:0,2:0}; voltaEm = {1:{},2:{}}; fila = []; agenda = [];
   grana = { 1:CONFIG.dinheiroInicial, 2:CONFIG.dinheiroInicial };
@@ -438,11 +461,31 @@ function novaPartida(){
 novaPartida();
 
 const ENTRADA = 0.55;   // tempo da carta voando até o campo
+const AVISO_MIN = 6;   // toda ação aparece na câmera pelo menos 5s antes
+function agendar(j, ev, desejado){
+  let t = Math.max(desejado, simT + AVISO_MIN);
+  const cap = (t >= CONFIG.duracao - (CONFIG.finalSegundos || 20) ? CONFIG.maxFinal : CONFIG.maxEmCampo) || 99;
+  for (let i = 0; i < 20; i++) {
+    const perto = agenda.find(a => a.j === j && a.p !== undefined && Math.abs(a.t - t) < 5 - 1e-6);
+    if (!perto) break;
+    const grupo = agenda.filter(a => a.j === j && Math.abs(a.t - perto.t) < 0.01).length;
+    const vivos = unid.filter(u => u.j === j && u.vida > 0).length;
+    // junta com a compra já avisada se ela ainda tem ≥5s de aviso e cabe no campo; senão vai 5s depois dela
+    if (perto.t - simT >= AVISO_MIN - 1 && perto.t >= desejado - 0.01 && grupo + vivos < cap) { t = perto.t; break; }
+    t = perto.t + 5;
+  }
+  agenda.push({ ...ev, j, t, ini: simT });
+  agenda.sort((a, b) => a.t - b.t);
+}
 function adicionar(e){
   const P = CONFIG.personagens[e.j][e.p], preco = P.preco || 0;
-  if ((voltaEm[e.j][e.p] || 0) > simT || simT < P.libera || grana[e.j] < preco) { fila.push(e); return; }
+  const cheio = unid.filter(u => u.j === e.j && u.vida > 0).length >= ((simT >= CONFIG.duracao - (CONFIG.finalSegundos || 20) ? CONFIG.maxFinal : CONFIG.maxEmCampo) || 99);
   if (unid.some(u => u.j === e.j && u.p === e.p && u.vida > 0)) return;   // já está em campo
-  if (unid.filter(u => u.j === e.j && u.vida > 0).length >= ((simT >= CONFIG.duracao - 90 ? CONFIG.maxFinal : CONFIG.maxEmCampo) || 99)) { if (!e.reforco) fila.push(e); return; }   // campo cheio: espera alguém sair
+  if ((voltaEm[e.j][e.p] || 0) > simT || simT < P.libera || grana[e.j] < preco || cheio) {
+    // ainda não dá: avisa de novo e tenta daqui a pouco (sempre com aviso antes)
+    if (!(e.reforco && cheio) && (e.tent || 0) < 30) agendar(e.j, { ...e, tent: (e.tent || 0) + 1 }, Math.max(simT, (voltaEm[e.j][e.p] || 0), P.libera));
+    return;
+  }
   agenda = agenda.filter(a => !(a.j === e.j && a.p === e.p));
   grana[e.j] -= preco;
   const prof = ((prox_id * 0.618) % 1 - 0.5) * 3;
@@ -463,11 +506,16 @@ function passo(){
   for (const j of [1,2]) grana[j] += CONFIG.renda * (1 + simT / CONFIG.rendaCresce) * DT;
   for (const e of fila.splice(0)) adicionar(e);
   if (CONFIG.vencedor) { if (!PRESS) calcPressao();
-    while (idxV < PRESS.viradas.length && PRESS.viradas[idxV].t - 4 <= simT) { comprarReforco(PRESS.viradas[idxV].lado); idxV++; } }
+    while (idxV < PRESS.viradas.length && PRESS.viradas[idxV].t - 4 - AVISO_MIN - 1 <= simT) { comprarReforco(PRESS.viradas[idxV].lado, PRESS.viradas[idxV].t - 4); idxV++; } }
   for (const e of agenda.filter(a => a.t <= simT)) { agenda.splice(agenda.indexOf(e), 1); adicionar(e); }
-  while (idxR < CONFIG.roteiro.length && CONFIG.roteiro[idxR].t <= simT) {
+  agenda.sort((a, b) => a.t - b.t);
+  while (idxR < CONFIG.roteiro.length && CONFIG.roteiro[idxR].t - AVISO_MIN - 2 <= simT) {
     const e = CONFIG.roteiro[idxR++];
-    if (e.tipo === "msg") msgs[e.j] = { texto:e.texto, ate:simT+3 }; else adicionar(e);
+    if (e.tipo !== "msg") agendar(e.j, { p: e.p }, e.t);
+  }
+  while (idxM < CONFIG.roteiro.length && CONFIG.roteiro[idxM].t <= simT) {
+    const e = CONFIG.roteiro[idxM++];
+    if (e.tipo === "msg") msgs[e.j] = { texto:e.texto, ate:simT+4 };
   }
   if (fim) return;
   const BT = DT * CONFIG.ritmo;   // tempo de batalha
@@ -548,24 +596,39 @@ function passo(){
   tiros = tiros.filter(t => !t.morto);
   for (const u of unid) if (u.vida <= 0 && u.morte === undefined) { u.morte = simT; FX.morte(u); voltaEm[u.j][u.p] = simT + CONFIG.cooldownMorte;
     // acabou o cooldown -> aviso na câmera -> recoloca
-    if (CONFIG.autoRecolocar) agenda.push({ t: voltaEm[u.j][u.p] + CONFIG.avisoRecolocar, avisoDe: voltaEm[u.j][u.p], j:u.j, p:u.p, auto:true }); }
+    if (CONFIG.autoRecolocar) { const q = melhorParaComprar(u.j, simT + AVISO_MIN);
+      if (q >= 0 && q !== u.p) agendar(u.j, { p:q }, simT);                                   // compra outro (mais caro se der)
+      else if (!agenda.some(a => a.j === u.j && a.p === u.p)) agendar(u.j, { p:u.p, auto:true, avisoDe: voltaEm[u.j][u.p] }, voltaEm[u.j][u.p]); } }
   unid = unid.filter(u => u.vida > 0 || simT - u.morte < 0.6);
   if (CONFIG.vencedor) {
     const perd = CONFIG.vencedor === 1 ? 2 : 1, venc = CONFIG.vencedor;
+    // desprotegido = tem inimigo perto do nexus e nenhum aliado entre ele e o nexus
+    const desprot = j => { const N = NEXUS[j].x; let inim = 1e9;
+      for (const u of unid) if (u.j !== j && ativo(u)) inim = Math.min(inim, Math.abs(u.x - N));
+      if (inim > 6) return false;
+      return !unid.some(u => u.j === j && ativo(u) && Math.abs(u.x - N) <= inim + 0.6); };
+    const passoMax = CONFIG.nexusVida * 0.12 * DT;   // tira no máximo 12%/s (vai caindo em "golpes")
     // curva: começa devagar e acelera no final (chega a 0 em "duracao")
     const f = Math.min(1, simT / CONFIG.duracao), alvo = simT >= CONFIG.duracao ? 0 : CONFIG.nexusVida * (1 - pressao("p", simT));
-    if (nx[perd].vida > alvo + 1) {
-      const tira = nx[perd].vida - alvo;
-      if (tira >= CONFIG.nexusVida * 0.006 || alvo <= 0) {     // tira em pedacinhos (parece golpe)
-        nx[perd].vida = Math.max(0, alvo); nx[perd].hit = simT; FX.hit({ x:NEXUS[perd].x, y:0 }, tira, true, perd);
-      }
+    const dp = desprot(perd) || simT > CONFIG.duracao + 12;
+    nx[perd].acum = (nx[perd].acum || 0);
+    if (dp && nx[perd].vida > alvo + 1) {
+      const tira = Math.min(nx[perd].vida - alvo, passoMax); nx[perd].acum += tira; nx[perd].vida -= tira;
+      if (nx[perd].acum >= CONFIG.nexusVida * 0.008 || alvo <= 0) { nx[perd].hit = simT; FX.hit({ x:NEXUS[perd].x, y:0 }, nx[perd].acum, true, perd); nx[perd].acum = 0; }
+      if (alvo <= 0 && nx[perd].vida < 1) nx[perd].vida = 0;
     }
-    if (simT < CONFIG.duracao) nx[perd].vida = Math.max(nx[perd].vida, alvo * 0.96, 1);   // golpes reais não adiantam o fim
+    if (!dp) nx[perd].vida = Math.max(nx[perd].vida, nx[perd].trava ?? nx[perd].vida);   // protegido: não cai
+    nx[perd].trava = dp ? undefined : nx[perd].vida;
+    if (simT < CONFIG.duracao) nx[perd].vida = Math.max(nx[perd].vida, alvo * 0.96, 1);
     // o vencedor também vai apanhando aos poucos (termina com ~35%), mas nunca abaixo da curva
     const alvoV = CONFIG.nexusVida * (1 - 0.6 * pressao("v", simT));
-    if (nx[venc].vida > alvoV + 1 && nx[venc].vida - alvoV >= CONFIG.nexusVida * 0.006) { const tira = nx[venc].vida - alvoV;
-      nx[venc].vida = alvoV; nx[venc].hit = simT; FX.hit({ x:NEXUS[venc].x, y:0 }, tira, true, venc); }
-    nx[venc].vida = Math.max(nx[venc].vida, alvoV * 0.92);
+    const dv = desprot(venc);
+    nx[venc].acum = (nx[venc].acum || 0);
+    if (dv && nx[venc].vida > alvoV + 1) { const tira = Math.min(nx[venc].vida - alvoV, passoMax); nx[venc].vida -= tira; nx[venc].acum += tira;
+      if (nx[venc].acum >= CONFIG.nexusVida * 0.008) { nx[venc].hit = simT; FX.hit({ x:NEXUS[venc].x, y:0 }, nx[venc].acum, true, venc); nx[venc].acum = 0; } }
+    if (!dv) nx[venc].vida = Math.max(nx[venc].vida, nx[venc].trava ?? nx[venc].vida);
+    nx[venc].trava = dv ? undefined : nx[venc].vida;
+    nx[venc].vida = Math.max(nx[venc].vida, alvoV * 0.92, CONFIG.nexusVida * 0.2);
   }
   for (const j of [1,2]) if (nx[j].vida <= 0 && !fim) { fim = j===1 ? 2 : 1; FX.explodeNexus(j); try { if (EU === 1 && !window.ESPECTADOR || window.ESPECTADOR === 1 && EU === 1) NX.set("fim", { vencedor: fim, em: Date.now() }); } catch (e) {} }
 }
@@ -930,10 +993,9 @@ function cartaRect(i){
 }
 const dinheiroPos = () => ({ x: snap(PX*25), y: snap(H - LOJA_H/2 + PX*2) });
 function proxDo(j){
-  let r = null;
-  for (let i=idxR;i<CONFIG.roteiro.length;i++){ const e=CONFIG.roteiro[i]; if(e.j===j){ r=e; break; } }
-  for (const a of agenda) if (a.j === j && (!r || a.t < r.t)) r = a;
-  return r;
+  for (const a of agenda) if (a.j === j) return a;          // agenda já está em ordem de tempo
+  for (let i=idxR;i<CONFIG.roteiro.length;i++){ const e=CONFIG.roteiro[i]; if(e.j===j && e.tipo !== "msg") return e; }
+  return null;
 }
 const fmt$ = v => { v = Math.floor(v); return "$" + (v >= 10000 ? (v/1000).toFixed(1).replace(".0","") + "K" : v); };
 const tempoTxt = s => s >= 60 ? Math.floor(s/60) + ":" + String(Math.ceil(s)%60).padStart(2,"0") : Math.ceil(s) + "s";
@@ -1032,14 +1094,23 @@ function candidatosCam(j){
   const L = [], venc = CONFIG.vencedor, falta = CONFIG.duracao - simT;
   if (venc && falta <= 15) L.push({ chave:"final", ate: CONFIG.duracao, prio: 9,
     txt: () => j === venc ? `🏆 VOCÊ VAI VENCER EM ${seg(CONFIG.duracao - simT)}s!` : `💀 SEU NEXUS CAI EM ${seg(CONFIG.duracao - simT)}s!` });
-  if (msgs[j] && simT < msgs[j].ate) { const m = msgs[j]; L.push({ chave:"msg"+m.ate, ate: m.ate, prio: 5, txt: () => "💬 " + m.texto }); }
+  if (msgs[j] && simT < msgs[j].ate) { const m = msgs[j]; L.push({ chave:"msg"+m.ate, ate: m.ate, prio: 2, txt: () => "💬 " + m.texto }); }
   const e = proxDo(j);
-  if (e) {
-    if (e.tipo === "msg") L.push({ chave:"rm"+e.t, ate: e.t, prio: 3, txt: () => `em ${seg(e.t - simT)}s: ${e.texto}` });
+  const grupo = e && e.ini !== undefined && e.p !== undefined ? agenda.filter(a => a.j === j && a.p !== undefined && Math.abs(a.t - e.t) < 0.01 && !(a.auto && simT < a.avisoDe)) : [];
+  if (grupo.length > 1) {
+    L.push({ chave:"grupo"+e.t, ate: e.t, prio: 4, txt: () => {
+      const g = agenda.filter(a => a.j === j && a.p !== undefined && Math.abs(a.t - e.t) < 0.01).map(a => CONFIG.personagens[j][a.p]);
+      if (!g.length) return candidatosCam.ult || "";
+      const total = g.reduce((s2, P) => s2 + (P.preco||0), 0);
+      return candidatosCam.ult = `em ${seg(e.t - simT)}s: compra ${g.map(P => P.nome).join(" + ")} (${fmt$(total)})`; } });
+  } else if (e) {
+    if (e.tipo === "msg") L.push({ chave:"rm"+e.t, ate: e.t, prio: 4, txt: () => `em ${seg(e.t - simT)}s: ${e.texto}` });
     else { const P = CONFIG.personagens[j][e.p];
-      if (e.auto && simT < e.avisoDe) L.push({ chave:"morto"+e.p+e.avisoDe, ate: e.avisoDe, prio: 3, txt: () => `${P.nome} morreu, volta em ${seg(e.avisoDe - simT)}s` });
+      if (e.reforco) L.push({ chave:"ref"+e.t+e.p, ate: e.t, prio: 4, txt: () => `💪 reforço: compra ${P.nome} em ${seg(e.t - simT)}s (seu time vai avançar)` });
+      else if (e.tent) L.push({ chave:"tent"+e.t+e.p, ate: e.t, prio: 4, txt: () => `em ${seg(e.t - simT)}s: tenta comprar ${P.nome} (${fmt$(P.preco||0)})` });
+      else if (e.auto && simT < e.avisoDe) L.push({ chave:"morto"+e.p+e.avisoDe, ate: e.avisoDe, prio: 3, txt: () => `${P.nome} morreu, volta em ${seg(e.avisoDe - simT)}s` });
       else if (e.auto) L.push({ chave:"rec"+e.p+e.t, ate: e.t, prio: 4, txt: () => `⚠️ vai recolocar ${P.nome} em ${seg(e.t - simT)}s (${fmt$(P.preco||0)})` });
-      else L.push({ chave:"cp"+e.t+e.p, ate: e.t, prio: 3, txt: () => `em ${seg(e.t - simT)}s: compra ${P.nome} (${fmt$(P.preco||0)})` }); }
+      else L.push({ chave:"cp"+e.t+e.p, ate: e.t, prio: 4, txt: () => `em ${seg(e.t - simT)}s: compra ${P.nome} (${fmt$(P.preco||0)})` }); }
   }
   if (venc && j !== venc && nx[j].vida / CONFIG.nexusVida < 0.3 && falta > 15) L.push({ chave:"quase", ate: simT + 4, prio: 2, txt: () => "⚠️ seu nexus tá quase caindo!" });
   if (venc && falta > 15) { const ag = empurrao(simT) * (j === venc ? 1 : -1);
@@ -1061,7 +1132,7 @@ function camTexto(el, j){
   const cur = camTexto.c[j];
   const cands = candidatosCam(j), top = cands[0];
   // troca só quando o atual terminou (ou se chegou algo mais importante, tipo a contagem final)
-  if (!cur || simT >= cur.ate + 0.6 || simT < cur.ini - 1 || (top && top.prio >= 9 && cur.chave !== top.chave)) camTexto.c[j] = top ? { ...top, ini: simT, tam: Math.max(1, top.ate - simT) } : null;
+  if (!cur || simT >= cur.ate + 0.15 || simT < cur.ini - 1 || (top && cur.chave !== top.chave && (top.prio >= 9 || top.prio > cur.prio))) camTexto.c[j] = top ? { ...top, ini: simT, tam: Math.max(1, top.ate - simT) } : null;
   const at = camTexto.c[j];
   span.textContent = at ? at.txt() : "só assistir";
   // linha "depois": também fica fixa até acontecer
@@ -1076,9 +1147,8 @@ function camTexto(el, j){
 
 btnVoltar.onclick = () => {
   // limpa o jogo e o meu lugar; o outro continua na tela final até ele mesmo voltar
-  if (EU) { NX.naoSair("j"+EU); NX.set("j"+EU, null); }
+  if (EU && dados["j"+EU]) NX.set("j"+EU, { ...dados["j"+EU], pronto: false });   // mantém nome e foto
   NX.set("inicio", null); NX.set("fim", null);
-  try { sessionStorage.removeItem("nexus_eu"); } catch (e) {}
   location.reload();
 };
 
