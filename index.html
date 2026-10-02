@@ -69,6 +69,9 @@
   #modal h2{font-size:24px;text-shadow:3px 3px 0 #0d2b0f}
   .avatarPick{width:130px;height:130px;background:#1f5f1b center/cover no-repeat;border:4px solid #0d2b0f;cursor:pointer;display:flex;align-items:center;justify-content:center;
     font-size:15px;color:#c6ff9e;text-align:center;box-shadow:4px 4px 0 rgba(0,0,0,.35)}
+  #recorte{display:none;flex-direction:column;align-items:center;gap:8px}
+  #recorte canvas{width:200px;height:200px;border:4px solid #0d2b0f;background:#0d2b0f;cursor:grab;touch-action:none;image-rendering:auto}
+  #recorte input{width:200px} #recorte small{font-size:9px;color:#e8ffd9;text-align:center}
   .avatarPick:hover{outline:4px solid #ffe14d}
   #modal input[type=text]{font-family:inherit;width:100%;padding:12px;border:4px solid #0d2b0f;background:#e8ffd9;color:#0d2b0f;font-size:20px;text-align:center;outline:none}
   #modal input[type=text]:focus{background:#fff}
@@ -101,13 +104,18 @@
   <h1>BATALHA DOS YOUTUBERS</h1>
   <div id="slots"></div>
   <div id="msgLobby"></div>
-  <div style="position:absolute;bottom:8px;right:12px;font-size:12px;opacity:.7;text-shadow:2px 2px 0 #0d2b0f">v22</div>
+  <div style="position:absolute;bottom:8px;right:12px;font-size:12px;opacity:.7;text-shadow:2px 2px 0 #0d2b0f">v23</div>
   <!-- compatibilidade com o código antigo -->
   <div id="form" style="display:none"></div><div id="espera" style="display:none"></div><button id="btnPronto" style="display:none"></button>
   <div id="modal"><div class="card px">
     <h2 id="mTitulo">Jogador 1</h2>
     <label class="avatarPick" id="avatarPick"><span id="avatarTxt">foto<br>(opcional)</span>
       <input type="file" id="lFoto" accept="image/*" hidden></label>
+    <div id="recorte"><canvas id="rcCanvas" width="240" height="240"></canvas>
+      <input type="range" id="rcZoom" min="1" max="4" step="0.01" value="1">
+      <small>quer recortar? arraste e use o zoom<br>(se não mexer, fica assim mesmo)</small>
+      <div class="btns"><label class="btn cinza" for="lFoto">Trocar</label><button class="btn verde" id="rcOk">OK ✔</button></div></div>
+    <button class="btn cinza" id="btnRecortar" style="display:none;font-size:11px;padding:8px 10px">✂️ Recortar foto</button>
     <input type="text" id="lNome" placeholder="Seu nome (opcional)" maxlength="20" autocomplete="off">
     <div class="btns"><button class="btn cinza" id="btnCancelar">Cancelar</button><button class="btn verde" id="btnSalvar">Salvar</button></div>
   </div></div>
@@ -127,11 +135,13 @@ if (firebaseConfig) {
   const db = getDatabase(initializeApp(firebaseConfig));
   const r = p => ref(db, "nexus/" + sala + (p ? "/" + p : ""));
   var offsetServ = 0; onValue(ref(db, ".info/serverTimeOffset"), s => offsetServ = s.val() || 0);
+  // a conexão caiu e voltou (aba em segundo plano no celular, internet piscou): marca de novo que estou aqui
+  onValue(ref(db, ".info/connected"), s => { if (s.val() && api && api._p) api.aoSair(api._p); });
   api = {
     ouvir: cb => onValue(r(), s => cb(s.val() || {})),
     set: (p, v) => set(r(p), v),
     // fechou a aba/caiu → o servidor anota a hora que saiu (quem está no lobby apaga 6s depois)
-    aoSair: p => { const o = onDisconnect(r("saiu_" + p)); o.cancel().then(() => o.set(serverTimestamp())); set(r("saiu_" + p), null); },
+    aoSair: p => { api._p = p; const o = onDisconnect(r("saiu_" + p)); o.cancel().then(() => o.set(serverTimestamp())); set(r("saiu_" + p), null); },
     naoSair: p => { onDisconnect(r("saiu_" + p)).cancel(); },
     agora: () => Date.now() + offsetServ,
   };
@@ -157,7 +167,7 @@ window.dispatchEvent(new Event("nx-pronto"));
    CONFIGURAÇÃO — personagens (placeholders) e ROTEIRO
    ===================================================================== */
 const CONFIG = {
-  versao: 22,               // muda quando o padrão muda: config velha salva no ADM é ignorada
+  versao: 23,               // muda quando o padrão muda: config velha salva no ADM é ignorada
   nexusVida: 5000,
   cooldown: 5,             // segundos entre compras (só visual, o roteiro manda)
   cooldownMorte: 10,       // quando um personagem morre, fica esse tempo sem poder ser colocado de novo
@@ -302,26 +312,60 @@ document.addEventListener("gesturestart", e => e.preventDefault());   // sem zoo
 
 /* sair da tela do jogo → apaga a pessoa (o lugar dela fica vazio) */
 // limpeza: quem saiu do site há mais de 6s some do lobby (só no lobby — durante a partida ninguém é apagado)
+// conta os 6s pelo relógio DESTE computador a partir de quando viu a saída (relógio do PC errado não apaga na hora)
+const vistoSaiu = {};
 setInterval(() => {
-  if (!dados || dados.inicio || window.ESPECTADOR) return;
-  for (const j of [1,2]) { const saiu = dados["saiu_j"+j];
-    if (dados["j"+j] && saiu && NX.agora() - saiu > 6000) { NX.set("j"+j, null); NX.set("saiu_j"+j, null); } }
-}, 1000);
+  for (const j of [1,2]) { const saiu = dados && dados["saiu_j"+j];
+    if (saiu && j === EU && dados["j"+j] && !window.ESPECTADOR) NX.set("saiu_j"+j, null);   // eu ainda estou aqui
+    if (!saiu || !dados["j"+j] || j === EU) { vistoSaiu[j] = null; continue; }
+    if (!vistoSaiu[j] || vistoSaiu[j].v !== saiu) vistoSaiu[j] = { v: saiu, t: performance.now() };
+    if (dados.inicio || window.ESPECTADOR) { vistoSaiu[j].t = performance.now(); continue; }   // na partida ninguém é apagado
+    if (performance.now() - vistoSaiu[j].t > 6000) { NX.set("j"+j, null); NX.set("saiu_j"+j, null); vistoSaiu[j] = null; } }
+}, 500);
 
 /* ===== lobby: 2 espaços (Jogador 1 e Jogador 2) ===== */
 let fotoData = "", slotEditando = 0;
+/* recortar foto: arrasta pra posicionar, barra de zoom, sai um quadrado 256x256 */
+const RC = { im: null, z: 1, x: 0, y: 0 }, rcC = document.getElementById("rcCanvas"), rcG = rcC.getContext("2d");
+const recorte = document.getElementById("recorte"), rcZoom = document.getElementById("rcZoom");
+function rcDesenha(){
+  const im = RC.im, S = rcC.width; if (!im) return;
+  const base = S / Math.min(im.width, im.height), e = base * RC.z, w = im.width * e, h = im.height * e;
+  RC.x = Math.min(0, Math.max(S - w, RC.x)); RC.y = Math.min(0, Math.max(S - h, RC.y));
+  rcG.fillStyle = "#0d2b0f"; rcG.fillRect(0, 0, S, S); rcG.drawImage(im, RC.x, RC.y, w, h);
+}
+function rcAbrir(src){
+  const im = new Image();
+  im.onload = () => { RC.im = im; RC.z = 1; rcZoom.value = 1;
+    const S = rcC.width, e = S / Math.min(im.width, im.height); RC.x = (S - im.width*e)/2; RC.y = (S - im.height*e)/2;
+    rcDesenha(); rcAplicar(); recorte.style.display = "flex"; avatarPick.style.display = "none"; btnRecortar.style.display = "none"; };
+  im.src = src;
+}
+rcZoom.oninput = () => { const S = rcC.width, cx = S/2, cy = S/2, z0 = RC.z, z1 = +rcZoom.value;
+  RC.x = cx - (cx - RC.x) * z1 / z0; RC.y = cy - (cy - RC.y) * z1 / z0; RC.z = z1; rcDesenha(); };
+let rcArr = null;
+rcC.addEventListener("pointerdown", e => { rcArr = { x: e.clientX, y: e.clientY }; rcC.setPointerCapture(e.pointerId); rcC.style.cursor = "grabbing"; });
+rcC.addEventListener("pointermove", e => { if (!rcArr) return; const k = rcC.width / rcC.clientWidth;
+  RC.x += (e.clientX - rcArr.x) * k; RC.y += (e.clientY - rcArr.y) * k; rcArr = { x: e.clientX, y: e.clientY }; rcDesenha(); });
+rcC.addEventListener("pointerup", () => { rcArr = null; rcC.style.cursor = "grab"; });
+rcC.addEventListener("wheel", e => { e.preventDefault(); rcZoom.value = Math.min(4, Math.max(1, +rcZoom.value - e.deltaY * 0.002)); rcZoom.oninput(); }, { passive: false });
+function rcFechar(){ recorte.style.display = "none"; avatarPick.style.display = ""; btnRecortar.style.display = fotoData && !fotoAuto ? "" : "none"; }
+function rcAplicar(){
+  if (!RC.im) return;
+  const c = document.createElement("canvas"), t = 256, k = t / rcC.width; c.width = c.height = t;
+  const im = RC.im, e = rcC.width / Math.min(im.width, im.height) * RC.z;
+  c.getContext("2d").drawImage(im, RC.x * k, RC.y * k, im.width * e * k, im.height * e * k);
+  fotoData = c.toDataURL("image/jpeg", 0.85); fotoAuto = false;
+  avatarPick.style.backgroundImage = `url(${fotoData})`; avatarTxt.style.display = "none";
+}
+document.getElementById("rcOk").onclick = () => { rcAplicar(); rcFechar(); };
+let fotoOriginal = "";
+btnRecortar.onclick = () => rcAbrir(fotoOriginal || fotoData);
 const inFoto = document.getElementById("lFoto");
 inFoto.onchange = () => {
   const f = inFoto.files[0]; if (!f) return;
-  const im = new Image();
-  im.onload = () => {
-    const c = document.createElement("canvas"), t = 256; c.width = c.height = t;
-    const m = Math.min(im.width, im.height);
-    c.getContext("2d").drawImage(im, (im.width-m)/2, (im.height-m)/2, m, m, 0, 0, t, t);
-    fotoData = c.toDataURL("image/jpeg", 0.8); fotoAuto = false;
-    avatarPick.style.backgroundImage = `url(${fotoData})`; avatarTxt.style.display = "none";
-  };
-  im.src = URL.createObjectURL(f);
+  const rd = new FileReader(); rd.onload = () => { fotoOriginal = rd.result; rcAbrir(rd.result); }; rd.readAsDataURL(f);
+  inFoto.value = "";
 };
 function abrirModal(j){
   const d = dados["j"+j];
@@ -329,6 +373,7 @@ function abrirModal(j){
   slotEditando = j; mTitulo.textContent = "Jogador " + j; mTitulo.style.color = j === 1 ? "#8fd8ff" : "#ffa3b3";
   fotoData = d ? d.foto : ""; lNome.value = d && d.nome !== "Jogador " + j ? d.nome : ""; fotoAuto = !d || !!d.fotoAuto;
   avatarPick.style.backgroundImage = fotoData ? `url(${fotoData})` : ""; avatarTxt.style.display = fotoData ? "none" : "";
+  fotoOriginal = ""; rcFechar();
   modal.style.display = "flex"; setTimeout(() => lNome.focus(), 50);
 }
 // foto automática: inicial do nome (ou J1/J2) num quadrado pixel da cor do time
@@ -343,6 +388,7 @@ function fotoInicial(txt, j){
 }
 let fotoAuto = true;
 function salvarModal(){
+  if (recorte.style.display === "flex") { rcAplicar(); rcFechar(); }
   const j = slotEditando;
   const digitado = lNome.value.trim(), nome = digitado || "Jogador " + j;
   // sem foto (ou foto automática antiga): gera a inicial do nome, ou J1/J2
@@ -1140,6 +1186,10 @@ function desenharVoos(t){
 /* ===== textos das câmeras (pequenos, sem fundo) ===== */
 /* ===== textos das câmeras: cada aviso fica fixo até a contagem dele acabar ===== */
 const seg = v => Math.max(0, Math.ceil(v - 1e-6));
+function desbloqTxt(j){   // personagem que vai liberar na loja (avisado ~9s antes)
+  return CONFIG.personagens[j].filter(P => P.libera > simT && P.libera - simT <= 9).sort((a, b) => a.libera - b.libera)
+    .map(P => ` · 🔓 ${P.nome} libera em ${seg(P.libera - simT)}s`).join("");
+}
 function candidatosCam(j){
   const L = [], venc = CONFIG.vencedor, falta = CONFIG.duracao - simT;
   if (venc && falta <= 15) L.push({ chave:"final", ate: CONFIG.duracao, prio: 9,
@@ -1156,7 +1206,11 @@ function candidatosCam(j){
       let txt = rec ? `⚠️ em ${seg(t0 - simT)}s: recoloca ${g[0].nome} (${fmt$(total)})`
               : `${ref ? "💪 " : ""}em ${seg(t0 - simT)}s: compra ${g.map(P => P.nome).join(" + ")} (${fmt$(total)})`;
       for (const a of agenda) if (a.j === j && a.p !== undefined && a.t > t0 + 0.01) txt += ` · ${CONFIG.personagens[j][a.p].nome} em ${seg(a.t - simT)}s`;
+      txt += desbloqTxt(j);
       return candidatosCam.ult = txt; } });
+  } else if (desbloqTxt(j)) {
+    const pr = CONFIG.personagens[j].filter(P => P.libera > simT && P.libera - simT <= 9).sort((a, b) => a.libera - b.libera)[0];
+    L.push({ chave:"lib"+pr.libera, ate: pr.libera, prio: 4, txt: () => desbloqTxt(j).replace(/^ · /, "") || candidatosCam.ult || "" });
   } else {
     const w = pendentes.find(w2 => w2.j === j && w2.motivo && w2.motivo !== "cedo");
     const ul = [...unid].filter(u => u.j === j && u.vida <= 0 && simT - u.morte < 4).pop();
@@ -1207,7 +1261,7 @@ function camTexto(el, j){
   const cur = camTexto.c[j];
   const cands = candidatosCam(j), top = cands[0];
   // troca só quando o atual terminou (ou se chegou algo mais importante, tipo a contagem final)
-  if (!cur || simT >= cur.ate + 0.15 || simT < cur.ini - 1 || (top && cur.chave !== top.chave && (top.prio >= 9 || top.prio > cur.prio || (top.prio >= 4 && top.ate < cur.ate - 0.01)))) camTexto.c[j] = top ? { ...top, ini: simT, tam: Math.max(1, top.ate - simT) } : null;
+  if (!cur || simT >= cur.ate + 0.15 || simT < cur.ini - 1 || (top && cur.chave !== top.chave && (top.prio >= 9 || top.prio > cur.prio || (top.prio >= 4 && top.ate < cur.ate - 0.01) || (top.chave.startsWith("ag") && !cur.chave.startsWith("ag"))))) camTexto.c[j] = top ? { ...top, ini: simT, tam: Math.max(1, top.ate - simT) } : null;
   const at = camTexto.c[j];
   span.textContent = at ? at.txt() : "só assistir";
   // linha "depois": também fica fixa até acontecer
