@@ -87,7 +87,7 @@
 </head>
 <body>
 <header>
-  <h1>⚙️ ADM · Batalha dos YOUTUBERS <small style="font-size:11px;opacity:.6">v23</small></h1>
+  <h1>⚙️ ADM · Batalha dos YOUTUBERS <small style="font-size:11px;opacity:.6">v24</small></h1>
   <div class="relogio" id="relogio">--</div>
   <span class="estado" id="estado">carregando…</span>
   <label class="linha" style="gap:6px;font-size:12px;color:var(--mu)">Sala <input id="sala" style="width:110px"></label>
@@ -137,7 +137,7 @@
     </section>
 
     <section>
-      <h2>🔜 Próximas ações</h2>
+      <h2>🔜 Próximos eventos fixos</h2><p class="ajuda" style="margin-top:-6px">desbloqueios, fases, poderes e avisos (as compras/mortes do meio são decididas na hora e aparecem na câmera de cada um)</p>
       <div class="prox">
         <div><div style="color:var(--azul);font-weight:800;margin-bottom:6px">Jogador 1</div><ul id="prox1"></ul></div>
         <div><div style="color:var(--verm);font-weight:800;margin-bottom:6px">Jogador 2</div><ul id="prox2"></ul></div>
@@ -149,11 +149,10 @@
   <div class="aba" id="aba-roteiro">
     <section>
       <h2>📜 Roteiro</h2>
-      <p class="ajuda">Cada linha é uma compra (ou um aviso). Tempo em <b>minutos:segundos</b> (ex: 1:30). Se o jogador ainda não tiver o dinheiro, o jogo espera juntar e compra sozinho — a previsão aparece em cada linha. <b>▶</b> pula a partida para 3s antes. Salva sozinho.</p>
+      <p class="ajuda">As <b>compras, mortes, desbloqueios e poderes</b> agora são planejados sozinhos pelo jogo (sempre iguais em toda partida, e tudo aparece na câmera com antecedência). Aqui ficam só os <b>avisos</b> extras que aparecem na câmera de cada jogador. Tempo em <b>minutos:segundos</b>. <b>▶</b> pula a partida para 3s antes. Salva sozinho.</p>
       <div class="linha" style="margin-bottom:12px">
-        <button class="b" onclick="addLinha('add',1)">+ Compra J1</button>
-        <button class="b" style="background:var(--verm)" onclick="addLinha('add',2)">+ Compra J2</button>
-        <button class="b ama" onclick="addLinha('msg',1)">+ Aviso</button>
+        <button class="b ama" onclick="addLinha('msg',1)">+ Aviso J1</button>
+        <button class="b ama" onclick="addLinha('msg',2)">+ Aviso J2</button>
       </div>
       <div class="rot" id="rot"></div>
     </section>
@@ -178,9 +177,10 @@
         <label class="campo"><b>Vida do nexus</b><input type="number" id="nexusVida"></label>
         <label class="campo"><b>⚔️ Dano quando é forte (x)</b><input type="number" id="forte" step="0.1"></label>
         <label class="campo"><b>⚔️ Dano quando é fraco (x)</b><input type="number" id="fraco" step="0.1"></label>
-        <label class="campo"><b>👥 Máx. em campo por lado</b><input type="number" id="maxEmCampo" min="1"><small>quantos personagens cada time pode ter ao mesmo tempo</small></label>
-        <label class="campo"><b>👥 Máx. em campo no final</b><input type="number" id="maxFinal" min="1"><small>só vale nos segundos finais (abaixo)</small></label>
-        <label class="campo"><b>⏱ Segundos finais com 4</b><input type="number" id="finalSegundos" min="0"><small>quantos segundos antes do nexus cair libera o máximo do final</small></label>
+        <label class="campo"><b>👥 Vira 2v2 aos (s)</b><input type="number" id="fase2v2" min="0"><small>antes disso é 1v1 (120 = 2:00)</small></label>
+        <label class="campo"><b>👥 Vira 3v3 aos (s)</b><input type="number" id="fase3v3" min="0"><small>150 = 2:30</small></label>
+        <label class="campo"><b>👥 Vira 4v4 aos (s)</b><input type="number" id="fase4v4" min="0"><small>450 = 7:30 (final)</small></label>
+        <label class="campo"><b>🎁 Aviso do poder (s)</b><input type="number" id="avisoPoder" min="3"><small>quanto tempo antes aparece "poder aleatório em Xs" no meio</small></label>
         <label class="campo"><b>⚡ Acelerar (debug)</b><input type="number" id="acelerar" step="1" min="1"><small>1 = normal · 8 = partida de 8 min em 1 min</small></label>
         <label class="campo"><b>🏆 Quem ganha</b><select id="vencedor"><option value="1">Jogador 1</option><option value="2">Jogador 2</option><option value="0">Ninguém (batalha decide)</option></select><small>o nexus do perdedor vai caindo aos poucos até o fim</small></label>
         <label class="campo"><b>⏱ Duração até o nexus cair (s)</b><input type="number" id="duracao"><small>480 = 8:00</small></label>
@@ -191,13 +191,16 @@
         <label class="campo"><b>Ritmo da batalha</b><input type="number" id="ritmo" step="0.05" min="0.1"><small>1 = normal · 0.5 = metade · 0.3 = bem lento</small></label>
         <label class="campo"><b>Cooldown entre compras (s)</b><input type="number" id="cooldown" step="0.5"></label>
         <label class="campo"><b>Cooldown depois de morrer (s)</b><input type="number" id="cooldownMorte" step="0.5"></label>
-        <label class="campo"><b>Aviso antes de recolocar (s)</b><input type="number" id="avisoRecolocar" step="0.5"></label>
-        <label class="campo toggle"><input type="checkbox" id="autoRecolocar"><span><b>Recolocar sozinho</b><br><small>quando acaba o cooldown de morte</small></span></label>
         <label class="campo toggle"><input type="checkbox" id="nexusAtira"><span><b>Nexus atira</b><br><small>em quem ataca ele</small></span></label>
         <label class="campo toggle"><input type="checkbox" id="killFeed"><span><b>Aviso de abate no meio</b><br><small>foto + "fulano matou ciclano" no topo central</small></span></label>
         <label class="campo toggle"><input type="checkbox" id="espelharJ2"><span><b>Inverter tela do Jogador 2</b><br><small>ligado: cada um vê o próprio nexus na esquerda · desligado: os dois veem igual (o texto da câmera não muda)</small></span></label>
         <label class="campo toggle"><input type="checkbox" id="focarNovo"><span><b>Focar no novo</b><br><small>quem bate no nexus troca pro recém-colocado</small></span></label>
       </div>
+    </section>
+    <section>
+      <h2>🎁 Poderes que caem do céu</h2>
+      <p class="ajuda">Parece aleatório pra quem assiste, mas sempre cai no personagem escolhido aqui. Dura 10s. O jogo garante que ele vai estar em campo na hora (compra antes com aviso, se precisar).</p>
+      <div id="poderes"></div>
       <div class="linha" style="margin-top:14px"><button class="b perigo" onclick="restaurarPadrao()">↩ Voltar regras, personagens e roteiro pro padrão do código</button></div>
     </section>
   </div>
@@ -278,7 +281,7 @@ function renderClasses(){
       <p>🔵 ${quem(1)}<br>🔴 ${quem(2)}</p></div>`;
   }).join("");
 }
-const CAMPOS = ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","finalSegundos","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo","killFeed","espelharJ2"];
+const CAMPOS = ["nexusVida","cooldown","cooldownMorte","ritmo","dinheiroInicial","renda","rendaCresce","lojaFundo","fase2v2","fase3v3","fase4v4","avisoPoder","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo","killFeed","espelharJ2"];
 let C = null;
 async function carregar(salva){
   const pad = await pegarPadrao();
@@ -287,6 +290,7 @@ async function carregar(salva){
   for (const k of CAMPOS) if (C[k] === undefined) C[k] = pad[k];
   if (!C.personagens) C.personagens = pad.personagens;
   if (!C.roteiro) C.roteiro = pad.roteiro;
+  if (!C.poderes) C.poderes = pad.poderes;
   renderTudo();
 }
 
@@ -305,13 +309,27 @@ function mudou(redesenhar){
 }
 
 /* ===== render ===== */
-function renderTudo(){ renderRegras(); renderPers(); renderClasses(); renderRoteiro(); renderTimeline(); }
+function renderTudo(){ renderRegras(); renderPers(); renderPoderes(); renderClasses(); renderRoteiro(); renderTimeline(); }
 
 function renderRegras(){
   for (const k of CAMPOS) { const el = $(k); if (el.type === "checkbox") el.checked = !!C[k]; else el.value = C[k]; }
 }
 CAMPOS.forEach(k => $(k).addEventListener("input", e => { C[k] = e.target.type === "checkbox" ? e.target.checked : e.target.tagName === "SELECT" ? (isNaN(+e.target.value) ? e.target.value : +e.target.value) : +e.target.value; mudou(); }));
 
+const TIPOS_PODER = { gigante:"🍄 Gigante (fica enorme e aguenta muito)", estrela:"⭐ Estrela (invencível)", arcano:"🔮 Magia suprema (magia roxa gigante)" };
+function renderPoderes(){
+  if (!C.poderes) return;
+  $("poderes").innerHTML = C.poderes.map((o, i) => {
+    const lista = C.personagens[o.j] || [];
+    return `<div class="ev-row" style="grid-template-columns:120px 1fr 110px 1fr;border-left-color:${o.j == 1 ? "var(--azul)" : "var(--verm)"}">
+      <label style="font-size:11px;color:var(--mu)">Cai aos (m:ss)<input value="${mmss(o.t)}" onchange="setPoder(${i},'t',lerTempo(this.value))" style="width:100%;font-weight:900;font-size:15px"></label>
+      <label style="font-size:11px;color:var(--mu)">Poder<select onchange="setPoder(${i},'tipo',this.value)" style="width:100%">${Object.entries(TIPOS_PODER).map(([k,v]) => `<option value="${k}" ${o.tipo===k?"selected":""}>${v}</option>`).join("")}</select></label>
+      <label style="font-size:11px;color:var(--mu)">Jogador<select onchange="setPoder(${i},'j',+this.value)" style="width:100%"><option value="1" ${o.j==1?"selected":""}>J1</option><option value="2" ${o.j==2?"selected":""}>J2</option></select></label>
+      <label style="font-size:11px;color:var(--mu)">Cai pro personagem<select onchange="setPoder(${i},'p',+this.value)" style="width:100%">${lista.map((P,k) => `<option value="${k}" ${o.p==k?"selected":""}>${k+1}. ${esc(P.nome)} · ${(CLASSES[P.classe]||{}).nome||""} (libera ${mmss(P.libera)})</option>`).join("")}</select>
+        ${lista[o.p] && lista[o.p].libera > o.t - 10 ? `<div class="alerta">⚠️ esse personagem libera muito perto/depois do poder</div>` : ""}</label>
+    </div>`; }).join("");
+}
+window.setPoder = (i, k, v) => { C.poderes[i][k] = v; renderPoderes(); mudou(true); };
 function renderPers(){
   [1,2].forEach(j => {
     const cor = j === 1 ? "var(--azul)" : "var(--verm)";
@@ -371,6 +389,7 @@ function preverDinheiro(){
   });
 }
 function renderRoteiro(){
+  C.roteiro = C.roteiro.filter(e => e.tipo === "msg");
   C.roteiro.sort((a,b) => a.t - b.t); preverDinheiro();
   $("rot").innerHTML = C.roteiro.map((e, i) => {
     const msg = e.tipo === "msg", cor = e.j == 1 ? "var(--azul)" : "var(--verm)";
@@ -412,19 +431,31 @@ window.addLinha = (tipo, j) => {
 window.dup = i => { const e = structuredClone(C.roteiro[i]); e.t += 1; C.roteiro.splice(i+1, 0, e); mudou(true); };
 window.remover = i => { C.roteiro.splice(i, 1); mudou(true); };
 
+/* ===== eventos fixos da partida (desbloqueios, fases, poderes, avisos) ===== */
+function eventosFixos(){
+  const L = [];
+  [1,2].forEach(j => C.personagens[j].forEach((P, i) => { if ((P.libera||0) > 0) L.push({ t:P.libera, j, tipo:"lib", txt:`🔓 libera e entra ${P.nome}` }); }));
+  [[C.fase2v2,"2v2"],[C.fase3v3,"3v3"],[C.fase4v4,"4v4"]].forEach(([t, n]) => { if (t < C.duracao) { L.push({ t, j:1, tipo:"fase", txt:`👥 vira ${n}` }); L.push({ t, j:2, tipo:"fase", txt:`👥 vira ${n}` }); } });
+  (C.poderes||[]).forEach(o => { const P = (C.personagens[o.j]||[])[o.p] || {}; L.push({ t:o.t, j:o.j, tipo:"poder", txt:`${(TIPOS_PODER[o.tipo]||"").split(" (")[0]} cai pro ${P.nome}` }); });
+  C.roteiro.filter(e => e.tipo === "msg").forEach(e => L.push({ t:e.t, j:e.j, tipo:"msg", txt:"💬 " + e.texto }));
+  L.push({ t:C.duracao, j:C.vencedor || 1, tipo:"fim", txt:`🏆 J${C.vencedor || 1} vence` });
+  return L.sort((a, b) => a.t - b.t);
+}
 /* ===== linha do tempo ===== */
 let TMAX = 60;
 function renderTimeline(){
   if (!C) return;
-  TMAX = Math.max(30, ...C.roteiro.map(e => e.t)) + 10;
+  const EV = eventosFixos();
+  TMAX = Math.max(30, C.duracao || 0, ...EV.map(e => e.t)) + 10;
   const y = { 1: 24, m: 48, 2: 72 };
   let h = `<div class="fx" style="top:${y[1]}px"></div><div class="fx" style="top:${y.m}px"></div><div class="fx" style="top:${y[2]}px"></div>
     <span class="lbl" style="top:${y[1]-15}px;color:var(--azul)">J1</span><span class="lbl" style="top:${y.m-15}px;color:var(--ama)">avisos</span><span class="lbl" style="top:${y[2]-15}px;color:var(--verm)">J2</span>`;
-  for (let s = 0; s <= TMAX; s += 10) h += `<span class="seg" style="left:${s/TMAX*100}%">${mmss(s)}</span>`;
-  C.roteiro.forEach(e => {
-    const msg = e.tipo === "msg", cor = msg ? "var(--ama)" : e.j == 1 ? "var(--azul)" : "var(--verm)";
-    const tt = msg ? `${mmss(e.t)} — ${e.texto}` : `${mmss(e.t)} — J${e.j} compra ${(C.personagens[e.j][e.p]||{}).nome}`;
-    h += `<div class="ev" title="${esc(tt)}" style="left:${e.t/TMAX*100}%;top:${msg ? y.m : y[e.j]}px;background:${cor}">${msg ? "" : e.p+1}</div>`;
+  for (let s = 0; s <= TMAX; s += 30) h += `<span class="seg" style="left:${s/TMAX*100}%">${mmss(s)}</span>`;
+  EV.forEach(e => {
+    if (e.tipo === "fase" && e.j === 2) return;
+    const meio = e.tipo === "msg" || e.tipo === "fase", cor = e.tipo === "msg" ? "var(--ama)" : e.tipo === "fase" ? "#8b5cf6" : e.tipo === "poder" ? "#ff9f1a" : e.tipo === "fim" ? "#5dff7a" : e.j == 1 ? "var(--azul)" : "var(--verm)";
+    const ic = { lib:"🔓", poder:"🎁", fase:"👥", msg:"", fim:"🏆" }[e.tipo];
+    h += `<div class="ev" title="${esc(mmss(e.t) + " — J" + e.j + " " + e.txt)}" style="left:${e.t/TMAX*100}%;top:${meio ? y.m : y[e.j]}px;background:${cor};font-size:9px">${ic}</div>`;
   });
   h += `<div class="play" id="play"></div>`;
   $("tl").innerHTML = h;
@@ -453,10 +484,10 @@ function tick(){
   const pl = $("play"); if (pl) pl.style.left = (t === null ? -10 : Math.max(0, t) / TMAX * 100) + "%";
   if (C) [1,2].forEach(j => {
     const tt = t === null ? -1 : t;
-    const prox = C.roteiro.filter(e => e.j == j && e.t >= tt - 1).slice(0, 5);
+    const prox = eventosFixos().filter(e => e.j == j && e.t >= tt - 1).slice(0, 6);
     $("prox"+j).innerHTML = prox.map(e => {
       const falta = t === null ? e.t : e.t - t;
-      const P = C.personagens[j][e.p]||{}, txt = e.tipo === "msg" ? "💬 " + esc(e.texto) : `🛒 ${esc(P.nome)} · $${(P.preco||0).toLocaleString("pt-BR")}`;
+      const txt = esc(e.txt);
       return `<li class="${t !== null && falta < 3 ? "agora" : ""}"><span class="t">${t === null ? mmss(e.t) : (falta > 0 ? "em " + mmss(Math.ceil(falta)) : "agora")}</span>${txt}</li>`;
     }).join("") || `<li style="color:var(--mu)">nada mais no roteiro</li>`;
   });
