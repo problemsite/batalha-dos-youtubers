@@ -87,7 +87,7 @@
 </head>
 <body>
 <header>
-  <h1>⚙️ ADM · Batalha dos YOUTUBERS <small style="font-size:11px;opacity:.6">v21</small></h1>
+  <h1>⚙️ ADM · Batalha dos YOUTUBERS <small style="font-size:11px;opacity:.6">v22</small></h1>
   <div class="relogio" id="relogio">--</div>
   <span class="estado" id="estado">carregando…</span>
   <label class="linha" style="gap:6px;font-size:12px;color:var(--mu)">Sala <input id="sala" style="width:110px"></label>
@@ -194,6 +194,8 @@
         <label class="campo"><b>Aviso antes de recolocar (s)</b><input type="number" id="avisoRecolocar" step="0.5"></label>
         <label class="campo toggle"><input type="checkbox" id="autoRecolocar"><span><b>Recolocar sozinho</b><br><small>quando acaba o cooldown de morte</small></span></label>
         <label class="campo toggle"><input type="checkbox" id="nexusAtira"><span><b>Nexus atira</b><br><small>em quem ataca ele</small></span></label>
+        <label class="campo toggle"><input type="checkbox" id="killFeed"><span><b>Aviso de abate no meio</b><br><small>foto + "fulano matou ciclano" no topo central</small></span></label>
+        <label class="campo toggle"><input type="checkbox" id="espelharJ2"><span><b>Inverter tela do Jogador 2</b><br><small>ligado: cada um vê o próprio nexus na esquerda · desligado: os dois veem igual (o texto da câmera não muda)</small></span></label>
         <label class="campo toggle"><input type="checkbox" id="focarNovo"><span><b>Focar no novo</b><br><small>quem bate no nexus troca pro recém-colocado</small></span></label>
       </div>
       <div class="linha" style="margin-top:14px"><button class="b perigo" onclick="restaurarPadrao()">↩ Voltar regras, personagens e roteiro pro padrão do código</button></div>
@@ -276,7 +278,7 @@ function renderClasses(){
       <p>🔵 ${quem(1)}<br>🔴 ${quem(2)}</p></div>`;
   }).join("");
 }
-const CAMPOS = ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","finalSegundos","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo"];
+const CAMPOS = ["nexusVida","cooldown","cooldownMorte","ritmo","autoRecolocar","avisoRecolocar","dinheiroInicial","renda","rendaCresce","lojaFundo","maxEmCampo","maxFinal","finalSegundos","acelerar","vencedor","duracao","forte","fraco","nexusAtira","focarNovo","killFeed","espelharJ2"];
 let C = null;
 async function carregar(salva){
   const pad = await pegarPadrao();
